@@ -111,14 +111,17 @@ export function LetterGrid({
       const lastPosition = currentPath[currentPath.length - 1]
       const positionIndex = getPositionInPath(row, col)
 
+      // If we're hovering over a position already in the path
       if (positionIndex !== -1) {
-        // If we're hovering over a position already in the path
-        if (positionIndex === currentPath.length - 2 && currentPath.length > 1) {
-          // If it's the second-to-last position, remove the last position (backtrack)
+        // Only allow backtracking to the immediate previous position
+        // and only if we have at least 2 positions in the path
+        if (positionIndex === currentPath.length - 2 && currentPath.length >= 2) {
+          // Remove the last position (backtrack)
           const newPath = currentPath.slice(0, -1)
           setCurrentPath(newPath)
           onPathChange(newPath)
         }
+        // Don't do anything if clicking on other already-selected positions
         return
       }
 
@@ -280,41 +283,44 @@ export function LetterGrid({
       const touch = e.touches[0]
       if (!touch) return
       
-      // Get all elements at this point (to handle overlapping touch areas)
-      const elements = document.elementsFromPoint(touch.clientX, touch.clientY)
-      let button: HTMLElement | null = null
+      // More aggressive touch detection for diagonal movements
+      const allButtons = gridRef.current.querySelectorAll('[data-row]')
+      let closestButton: HTMLElement | null = null
+      let minDistance = Number.MAX_VALUE
       
-      // Find the first button element that has row/col data
-      for (const element of elements) {
-        const candidate = element.closest("[data-row]") as HTMLElement
-        if (candidate && gridRef.current.contains(candidate)) {
-          button = candidate
-          break
+      // Find the closest button within expanded touch radius
+      for (const btn of allButtons) {
+        const btnElement = btn as HTMLElement
+        const btnRect = btnElement.getBoundingClientRect()
+        const btnCenterX = btnRect.left + btnRect.width / 2
+        const btnCenterY = btnRect.top + btnRect.height / 2
+        const distance = Math.sqrt(
+          Math.pow(touch.clientX - btnCenterX, 2) + 
+          Math.pow(touch.clientY - btnCenterY, 2)
+        )
+        
+        // Larger touch target: 50px radius for better diagonal detection
+        if (distance < 50 && distance < minDistance) {
+          minDistance = distance
+          closestButton = btnElement
         }
       }
 
-      // Also check for nearby buttons with expanded touch targets (but no debouncing)
-      if (!button) {
-        const allButtons = gridRef.current.querySelectorAll('[data-row]')
-        for (const btn of allButtons) {
-          const btnRect = btn.getBoundingClientRect()
-          const btnCenterX = btnRect.left + btnRect.width / 2
-          const btnCenterY = btnRect.top + btnRect.height / 2
-          const distance = Math.sqrt(
-            Math.pow(touch.clientX - btnCenterX, 2) + 
-            Math.pow(touch.clientY - btnCenterY, 2)
-          )
-          // Expanded touch target: 40px radius instead of exact tile hit
-          if (distance < 40) {
-            button = btn as HTMLElement
+      // Also try direct element detection as fallback
+      if (!closestButton) {
+        const elements = document.elementsFromPoint(touch.clientX, touch.clientY)
+        for (const element of elements) {
+          const candidate = element.closest("[data-row]") as HTMLElement
+          if (candidate && gridRef.current.contains(candidate)) {
+            closestButton = candidate
             break
           }
         }
       }
 
-      if (button) {
-        const row = Number.parseInt(button.dataset.row || "0")
-        const col = Number.parseInt(button.dataset.col || "0")
+      if (closestButton) {
+        const row = Number.parseInt(closestButton.dataset.row || "0")
+        const col = Number.parseInt(closestButton.dataset.col || "0")
         handleMouseEnter(row, col)
       }
     },
@@ -403,7 +409,22 @@ export function LetterGrid({
                   zIndex: isSelected ? 10 : 1,
                 }}
               >
-                <span>{letter}</span>
+                <div className="relative">
+                  <span>{letter}</span>
+                  {/* Letter Circle - like in reference */}
+                  {isSelected && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-4 pointer-events-none"
+                      style={{
+                        borderColor: colors.hex,
+                        opacity: isLastSelected ? 1 : 0.7
+                      }}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: isLastSelected ? 1 : 0.7 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  )}
+                </div>
                 {isSelected && (
                   <motion.div
                     className={`absolute -top-2 -right-2 w-6 h-6 bg-white ${colors.text} rounded-full flex items-center justify-center text-sm font-bold shadow-lg`}
