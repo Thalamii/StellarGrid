@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { getSessionId } from '@/lib/anonymous-session';
+import { supabase } from '@/lib/supabase';
+import type { UserProfile, DailyStreak, GameStatistics, DailyGame } from '@/lib/supabase';
 
 interface DailyStats {
   completionTime: number | null; // in seconds
@@ -32,28 +35,74 @@ export function useDailyStats() {
   const [currentSession, setCurrentSession] = useState<GameSession | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Load stats from localStorage for anonymous users or Supabase for authenticated users
+  // Load comprehensive stats from database
   const loadStats = useCallback(async () => {
     setLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
+      const sessionId = getSessionId();
       
-      if (user) {
-        // TODO: Load from Supabase when MCP is available
-        // For now, fallback to localStorage
-        const savedStats = localStorage.getItem(`dailyStats_${today}`);
-        if (savedStats) {
-          setStats(JSON.parse(savedStats));
-        }
-      } else {
-        // Load from localStorage for anonymous users
-        const savedStats = localStorage.getItem(`dailyStats_${today}`);
-        if (savedStats) {
-          setStats(JSON.parse(savedStats));
-        }
-      }
+      // Load user profile for overall stats
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('session_id', sessionId)
+        .single();
+      
+      // Load streak data
+      const { data: streakData } = await supabase
+        .from('daily_streaks')
+        .select('*')
+        .eq('session_id', sessionId)
+        .single();
+      
+      // Load today's game for completion time
+      const { data: todaysGame } = await supabase
+        .from('daily_games')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('game_date', today)
+        .single();
+      
+      // Load game statistics for averages and best times
+      const { data: gameStats } = await supabase
+        .from('game_statistics')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('date', { ascending: false });
+      
+      // Calculate stats from database data
+      const completionTime = todaysGame?.completed_at 
+        ? Math.floor((new Date(todaysGame.completed_at).getTime() - new Date(todaysGame.created_at).getTime()) / 1000)
+        : null;
+      
+      const completedGames = gameStats?.filter(stat => stat.completion_rate >= 100) || [];
+      const averageTime = completedGames.length > 0 
+        ? Math.floor(completedGames.reduce((sum, stat) => sum + stat.time_played_minutes * 60, 0) / completedGames.length)
+        : null;
+      
+      const bestTime = completedGames.length > 0 
+        ? Math.min(...completedGames.map(stat => stat.time_played_minutes * 60))
+        : null;
+      
+      setStats({
+        completionTime,
+        streak: streakData?.current_streak || 0,
+        averageCompletionTime: averageTime,
+        gamesPlayed: profile?.total_games_played || 0,
+        gamesCompleted: completedGames.length,
+        bestTime,
+        totalScore: gameStats?.reduce((sum, stat) => sum + stat.score, 0) || 0
+      });
+      
     } catch (error) {
       console.error('Error loading daily stats:', error);
+      // Fallback to localStorage for offline mode
+      const today = new Date().toISOString().split('T')[0];
+      const savedStats = localStorage.getItem(`dailyStats_${today}`);
+      if (savedStats) {
+        setStats(JSON.parse(savedStats));
+      }
     } finally {
       setLoading(false);
     }
@@ -79,8 +128,34 @@ export function useDailyStats() {
     }
   }, [user]);
 
-  // Start a new game session
-  const startSession = useCallback(() => {
+  // Check if today's game already exists
+  const checkTodaysGame = useCallback(async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const sessionId = getSessionId();
+      
+      const { data, error } = await supabase
+        .from('daily_games')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('game_date', today)
+        .single();
+      
+      // If table doesn't exist or other database errors, return null
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.log('Database not available, using localStorage mode');
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.log('Database error, falling back to localStorage:', error);
+      return null;
+    }
+  }, []);
+
+  // Start a new game session (only count unique daily games)
+  const startSession = useCallback(async () => {
     const session: GameSession = {
       startTime: new Date(),
       completed: false,
@@ -88,16 +163,132 @@ export function useDailyStats() {
     };
     setCurrentSession(session);
     
-    // Update games played count
-    const newStats = {
-      ...stats,
-      gamesPlayed: stats.gamesPlayed + 1
-    };
-    saveStats(newStats);
-  }, [stats, saveStats]);
+    const today = new Date().toISOString().split('T')[0];
+    const sessionId = getSessionId();
+    
+    try {
+      // Check if this is the first time playing today's puzzle
+      const existingGame = await checkTodaysGame();
+      
+      // Only proceed with database operations if we got a response (not null)
+      if (existingGame === null) {
+        // Database not available or error occurred, use localStorage fallback
+        const localStorageKey = `gameSession_${sessionId}_${today}`;
+        const existingLocalGame = localStorage.getItem(localStorageKey);
+        
+        if (!existingLocalGame) {
+          // Mark this game as started in localStorage
+          localStorage.setItem(localStorageKey, JSON.stringify({ started: true, date: today }));
+          
+          // Get current stats from localStorage or use empty initial state
+          const savedStats = localStorage.getItem(`dailyStats_${today}`);
+          const currentStats = savedStats ? JSON.parse(savedStats) : {
+            completionTime: null,
+            streak: 0,
+            averageCompletionTime: null,
+            gamesPlayed: 0,
+            gamesCompleted: 0,
+            bestTime: null,
+            totalScore: 0
+          };
+          
+          const newStats = {
+            ...currentStats,
+            gamesPlayed: (currentStats.gamesPlayed || 0) + 1
+          };
+          
+          console.log('Incrementing localStorage games played:', currentStats.gamesPlayed, '->', newStats.gamesPlayed);
+          
+          // Save to localStorage
+          localStorage.setItem(`dailyStats_${today}`, JSON.stringify(newStats));
+          setStats(newStats);
+        } else {
+          console.log('Game already started today (localStorage mode)');
+        }
+        return;
+      }
+      
+      if (!existingGame) {
+        // This is a new daily game - increment games played in database
+        
+        // Create or update user profile
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('session_id', sessionId)
+          .single();
+        
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.log('Database not available for profiles, using localStorage');
+          return;
+        }
+        
+        if (profile) {
+          // Update existing profile
+          await supabase
+            .from('user_profiles')
+            .update({
+              total_games_played: profile.total_games_played + 1,
+              last_played_date: today,
+              updated_at: new Date().toISOString()
+            })
+            .eq('session_id', sessionId);
+        } else {
+          // Create new profile
+          await supabase
+            .from('user_profiles')
+            .insert({
+              session_id: sessionId,
+              total_games_played: 1,
+              last_played_date: today,
+              is_anonymous: true
+            });
+        }
+        
+        // Refresh stats to show updated games played
+        loadStats();
+      }
+    } catch (error) {
+      console.error('Error in startSession, falling back to localStorage:', error);
+      
+      // Fallback to localStorage
+      const localStorageKey = `gameSession_${sessionId}_${today}`;
+      const existingLocalGame = localStorage.getItem(localStorageKey);
+      
+      if (!existingLocalGame) {
+        // Mark this game as started in localStorage
+        localStorage.setItem(localStorageKey, JSON.stringify({ started: true, date: today }));
+        
+        // Get current stats from localStorage or use empty initial state
+        const savedStats = localStorage.getItem(`dailyStats_${today}`);
+        const currentStats = savedStats ? JSON.parse(savedStats) : {
+          completionTime: null,
+          streak: 0,
+          averageCompletionTime: null,
+          gamesPlayed: 0,
+          gamesCompleted: 0,
+          bestTime: null,
+          totalScore: 0
+        };
+        
+        const newStats = {
+          ...currentStats,
+          gamesPlayed: (currentStats.gamesPlayed || 0) + 1
+        };
+        
+        console.log('Catch block: Incrementing localStorage games played:', currentStats.gamesPlayed, '->', newStats.gamesPlayed);
+        
+        // Save to localStorage
+        localStorage.setItem(`dailyStats_${today}`, JSON.stringify(newStats));
+        setStats(newStats);
+      } else {
+        console.log('Catch block: Game already started today (localStorage mode)');
+      }
+    }
+  }, [checkTodaysGame, loadStats]);
 
-  // Complete the current session
-  const completeSession = useCallback((finalScore: number, wordsFound: number, targetWords: number) => {
+  // Update the streak logic fully
+  const completeSession = useCallback(async (finalScore: number, wordsFound: number, targetWords: number) => {
     if (!currentSession) return;
 
     const endTime = new Date();
@@ -111,36 +302,97 @@ export function useDailyStats() {
       score: finalScore
     };
 
-    // Calculate new stats
-    const newStats = { ...stats };
+    const sessionId = getSessionId();
+    const today = new Date().toISOString().split('T')[0];
     
     if (isCompleted) {
-      newStats.gamesCompleted += 1;
-      newStats.completionTime = completionTime;
+      // Update streak in daily_streaks
+      const { data: streakData } = await supabase
+        .from('daily_streaks')
+        .select('*')
+        .eq('session_id', sessionId)
+        .single();
       
-      // Update best time
-      if (!newStats.bestTime || completionTime < newStats.bestTime) {
-        newStats.bestTime = completionTime;
-      }
-      
-      // Calculate average completion time
-      if (newStats.averageCompletionTime) {
-        newStats.averageCompletionTime = Math.floor(
-          (newStats.averageCompletionTime + completionTime) / 2
-        );
+      if (streakData) {
+        // Continue streak
+        if (streakData.last_completed_date === today) {
+          // Same day completion, do nothing
+        } else if(new Date(streakData.last_completed_date).getTime() === 
+          (new Date().getTime() - 1000*60*60*24)) {
+          // Consecutive day, increment streak
+          await supabase
+            .from('daily_streaks')
+            .update({
+              current_streak: streakData.current_streak + 1,
+              last_completed_date: today,
+              updated_at: new Date().toISOString()
+            })
+            .eq('session_id', sessionId);
+        } else {
+          // Break in streak, reset streak
+          await supabase
+            .from('daily_streaks')
+            .update({
+              current_streak: 1,
+              streak_start_date: today,
+              last_completed_date: today,
+              updated_at: new Date().toISOString()
+            })
+            .eq('session_id', sessionId);
+        }
       } else {
-        newStats.averageCompletionTime = completionTime;
+        // No streak data, start a new streak
+        await supabase
+          .from('daily_streaks')
+          .insert({
+            session_id: sessionId,
+            current_streak: 1,
+            streak_start_date: today,
+            last_completed_date: today
+          });
       }
-      
-      // Update streak (simplified - just increment for now)
-      newStats.streak += 1;
+
+      // Save today's completion to daily_games
+      await supabase
+        .from('daily_games')
+        .upsert({
+          session_id: sessionId,
+          game_date: today,
+          board: [], // Will be filled by game logic
+          found_words: [],
+          rotation_count: 0,
+          score: finalScore,
+          total_possible_words: targetWords,
+          completion_rate: 100,
+          completed_at: endTime.toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: "session_id,game_date" }
+      );
     }
-    
-    newStats.totalScore += finalScore;
-    
-    saveStats(newStats);
+
+    // Save game statistics
+    await supabase
+      .from('game_statistics')
+      .insert({
+        session_id: sessionId,
+        date: today,
+        words_found: isCompleted ? wordsFound : 0,
+        total_words: targetWords,
+        completion_rate: isCompleted ? 100 : 0,
+        score: finalScore,
+        time_played_minutes: Math.floor(completionTime / 60),
+        rotations_used: 0, // Assume logic has count for rotations
+        hints_used: 0, // Assume logic has count for hints
+        created_at: new Date().toISOString()
+      });
+
+    // Re-load stats to reflect latest streak and games played
+    loadStats();
+
     setCurrentSession(updatedSession);
-  }, [currentSession, stats, saveStats]);
+
+  }, [currentSession, stats, saveStats, loadStats]);
 
   // Format time helper
   const formatTime = useCallback((seconds: number | null): string => {

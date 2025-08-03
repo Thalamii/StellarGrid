@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Sparkles, User } from "lucide-react"
+import { Calendar, User } from "lucide-react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
@@ -8,6 +8,7 @@ import { AuthDialog } from "@/components/auth-dialog"
 import { GameInstructions } from "@/components/game-instructions"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useState } from "react"
+import Image from "next/image"
 
 export function GameHeader() {
   const { user, signOut } = useAuth()
@@ -41,15 +42,24 @@ export function GameHeader() {
         )}
       </div>
 
-      <motion.h1
-        className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
+      <motion.div
+        className="flex items-center justify-center gap-3"
         initial={{ scale: 0.9 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, duration: 0.4 }}
       >
-        <Sparkles className="inline w-8 h-8 mr-2 text-purple-500" />
-        WordGrid
-      </motion.h1>
+        <Image
+          src="/Wordgrid.webp"
+          alt="WordGrid Logo"
+          width={64}
+          height={64}
+          className="rounded-lg w-12 h-12 sm:w-16 sm:h-16 object-contain"
+          priority
+        />
+        <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          WordGrid
+        </h1>
+      </motion.div>
 
       <motion.div
         className="flex items-center justify-center space-x-2 text-muted-foreground"

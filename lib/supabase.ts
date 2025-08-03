@@ -5,9 +5,10 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Types for our database tables
+// Types for our database tables (anonymous user support)
 export interface UserProfile {
   id: string
+  session_id: string
   display_name?: string
   created_at: string
   updated_at: string
@@ -22,7 +23,7 @@ export interface UserProfile {
 
 export interface DailyGame {
   id: string
-  user_id: string
+  session_id: string
   game_date: string
   board: string[][]
   found_words: string[]
@@ -38,7 +39,7 @@ export interface DailyGame {
 
 export interface GameStatistics {
   id: string
-  user_id: string
+  session_id: string
   date: string
   words_found: number
   total_words: number
@@ -52,7 +53,7 @@ export interface GameStatistics {
 
 export interface DailyStreak {
   id: string
-  user_id: string
+  session_id: string
   current_streak: number
   longest_streak: number
   last_completed_date?: string

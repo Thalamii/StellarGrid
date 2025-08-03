@@ -33,7 +33,8 @@ export function WordGridGame() {
   const [wordValidationStatus, setWordValidationStatus] = useState<"valid" | "invalid" | "duplicate" | null>(null)
   const [gameStarted, setGameStarted] = useState(false)
   const [showAnimatedScore, setShowAnimatedScore] = useState(false)
-  const [lastScoredWord, setLastScoredWord] = useState({ word: "", score: 0, isPuzzleComplete: false })
+  const [lastScoredWord, setLastScoredWord] = useState({ word: "", score: 0, isPuzzleComplete: false, isBonusWord: false })
+  const [puzzleCompleted, setPuzzleCompleted] = useState(false)
 
   const initialState: GameState = {
     board: Array(4)
@@ -120,8 +121,20 @@ export function WordGridGame() {
         setWordValidationStatus("valid")
         const newFoundWords = [...gameState.foundWords, upperWord]
         const newScore = gameState.score + calculateWordScore(word.length)
-        const newCompletionRate = (newFoundWords.length / gameState.totalPossibleWords) * 100
-        const isPuzzleComplete = newFoundWords.length >= gameState.totalPossibleWords
+        
+        // Cap completion rate at 100% even with bonus words
+        const rawCompletionRate = (newFoundWords.length / gameState.totalPossibleWords) * 100
+        const newCompletionRate = Math.min(rawCompletionRate, 100)
+        
+        // Check if this completes the puzzle (first time reaching target)
+        const wasComplete = gameState.foundWords.length >= gameState.totalPossibleWords
+        const isPuzzleComplete = newFoundWords.length >= gameState.totalPossibleWords && !wasComplete
+        const isBonusWord = newFoundWords.length > gameState.totalPossibleWords
+        
+        // Track completion state
+        if (isPuzzleComplete) {
+          setPuzzleCompleted(true)
+        }
 
         updateGameState({
           foundWords: newFoundWords,
@@ -133,23 +146,39 @@ export function WordGridGame() {
         setLastScoredWord({
           word: upperWord,
           score: calculateWordScore(word.length),
-          isPuzzleComplete
+          isPuzzleComplete,
+          isBonusWord
         })
         setShowAnimatedScore(true)
 
-        // Complete session if puzzle is finished
+        // Complete session if puzzle is finished (only first time)
         if (isPuzzleComplete) {
-          completeSession(newScore, newFoundWords.length, gameState.totalPossibleWords)
+          completeSession(newScore, gameState.totalPossibleWords, gameState.totalPossibleWords)
         }
 
-        toast({
-          title: isPuzzleComplete ? "🎉 Puzzle Complete!" : "Great word!",
-          description: isPuzzleComplete 
-            ? "Amazing! You found all 50 words!" 
-            : `+${calculateWordScore(word.length)} points for "${upperWord}"`,
-          variant: "default",
-          duration: 1000, // Very quick - 1 second
-        })
+        // Different toasts based on word type
+        if (isPuzzleComplete) {
+          toast({
+            title: "🎉 Puzzle Complete!",
+            description: "Amazing! You found all 50 words!",
+            variant: "default",
+            duration: 2000, // Longer for celebration
+          })
+        } else if (isBonusWord) {
+          toast({
+            title: "🌟 Bonus Word!",
+            description: `+${calculateWordScore(word.length)} bonus points for "${upperWord}"`,
+            variant: "default",
+            duration: 1000,
+          })
+        } else {
+          toast({
+            title: "Great word!",
+            description: `+${calculateWordScore(word.length)} points for "${upperWord}"`,
+            variant: "default",
+            duration: 1000,
+          })
+        }
       } else {
         setWordValidationStatus("invalid")
         toast({

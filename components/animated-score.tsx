@@ -9,9 +9,10 @@ interface AnimatedScoreProps {
   show: boolean
   onComplete: () => void
   isPuzzleComplete?: boolean
+  isBonusWord?: boolean
 }
 
-export function AnimatedScore({ score, word, show, onComplete, isPuzzleComplete = false }: AnimatedScoreProps) {
+export function AnimatedScore({ score, word, show, onComplete, isPuzzleComplete = false, isBonusWord = false }: AnimatedScoreProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -38,7 +39,9 @@ export function AnimatedScore({ score, word, show, onComplete, isPuzzleComplete 
             className={`text-white px-6 py-3 rounded-full shadow-lg ${
               isPuzzleComplete 
                 ? "bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500" 
-                : "bg-gradient-to-r from-green-400 to-blue-500"
+                : isBonusWord
+                  ? "bg-gradient-to-r from-orange-400 via-yellow-500 to-amber-500"
+                  : "bg-gradient-to-r from-green-400 to-blue-500"
             }`}
             initial={{ scale: 0, y: 50 }}
             animate={{ 
