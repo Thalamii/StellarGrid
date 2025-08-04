@@ -1,18 +1,17 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { RotateCw, X } from "lucide-react"
+import { RotateCw } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface WordInputProps {
   currentWord: string
   onRotate: () => void
-  onClear: () => void
   isValid: boolean
   isAlreadyFound: boolean
 }
 
-export function WordInput({ currentWord, onRotate, onClear, isValid, isAlreadyFound }: WordInputProps) {
+export function WordInput({ currentWord, onRotate, isValid, isAlreadyFound }: WordInputProps) {
   const getStatusMessage = () => {
     if (!currentWord) return "Drag across letters to form words"
     if (currentWord.length < 3) return "Need at least 3 letters"
@@ -52,17 +51,6 @@ export function WordInput({ currentWord, onRotate, onClear, isValid, isAlreadyFo
         >
           <RotateCw className="w-5 h-5 mr-2" />
           Rotate
-        </Button>
-
-        <Button
-          onClick={onClear}
-          variant="outline"
-          size="lg"
-          disabled={!currentWord}
-          className="neomorphic-small bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border-0 text-gray-700 disabled:opacity-50"
-        >
-          <X className="w-5 h-5 mr-2" />
-          Clear
         </Button>
       </div>
     </div>
