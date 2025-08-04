@@ -9,19 +9,44 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/Wordgrid.webp",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/webp",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/Wordgrid.webp",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/webp",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "categories": ["games", "entertainment", "puzzle"],
   "lang": "en-US",
-  "dir": "ltr"
+  "dir": "ltr",
+  "scope": "/",
+  "id": "wordgrid-game",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Play Today's Puzzle",
+      "short_name": "Play",
+      "description": "Start playing today's word puzzle",
+      "url": "/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "protocol_handlers": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

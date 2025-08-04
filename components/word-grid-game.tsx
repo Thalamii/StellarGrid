@@ -10,6 +10,7 @@ import { FoundWordsList } from "./found-words-list"
 import { AnimatedScore } from "./animated-score"
 import { DailyStats } from "./daily-stats"
 import { SEOAccordion } from "./seo-accordion"
+import { InstallPrompt } from "./install-prompt"
 import { useGameState } from "@/hooks/use-game-state"
 import { useDailyStats } from "@/hooks/use-daily-stats"
 import { useToast } from "@/hooks/use-toast"
@@ -329,6 +330,8 @@ export function WordGridGame() {
         isPuzzleComplete={lastScoredWord.isPuzzleComplete}
         onComplete={() => setShowAnimatedScore(false)}
       />
+      
+      <InstallPrompt wordsFound={gameState.foundWords.length} />
       
       <Toaster />
     </>
