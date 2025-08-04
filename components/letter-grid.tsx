@@ -26,86 +26,47 @@ export function LetterGrid({
   rotation,
   wordValidationStatus,
 }: LetterGridProps) {
+  // Core state - simplified state machine approach
   const [isDragging, setIsDragging] = useState(false)
   const [currentPath, setCurrentPath] = useState<Array<{ row: number; col: number }>>([])
   const [trailPositions, setTrailPositions] = useState<Array<{ x: number; y: number }>>([])
   const [isCompleting, setIsCompleting] = useState(false)
-  const [isHovering, setIsHovering] = useState(false)
   
-  // Zero-latency performance refs
+  // Essential refs for performance and state tracking
   const gridRef = useRef<HTMLDivElement>(null)
-  const isDraggingRef = useRef(false)
-  const currentPathRef = useRef<Array<{ row: number; col: number }>>([])
-  const buttonRectsRef = useRef<Map<string, DOMRect>>(new Map())
-  const lastPositionRef = useRef<{ row: number; col: number } | null>(null)
   const animationFrameRef = useRef<number | null>(null)
+  const buttonRectsRef = useRef<Map<string, DOMRect>>(new Map())
   
-  // Advanced gesture recognition refs
-  const dragStartTimeRef = useRef<number>(0)
-  const lastMoveTimeRef = useRef<number>(0)
-  const movementVelocityRef = useRef<number>(0)
-  const hoverTimeoutRef = useRef<number | null>(null)
-  const debounceTimeoutRef = useRef<number | null>(null)
-  const gestureStateRef = useRef<'idle' | 'starting' | 'dragging' | 'completing'>('idle')
-  const dragStartPositionRef = useRef<{ x: number; y: number } | null>(null)
-  const totalMovementRef = useRef<number>(0)
-  const tileHoverStartRef = useRef<number>(0)
-  const currentTileRef = useRef<{ row: number; col: number } | null>(null)
+  // Throttling ref for smooth performance
+  const throttleFrameRef = useRef<number | null>(null)
   
-  // Mobile-optimized movement threshold constants
-  const MOVEMENT_THRESHOLD = window.innerWidth < 768 ? 3 : 5 // More sensitive on mobile
-  const HOVER_TIMEOUT = window.innerWidth < 768 ? 200 : 300 // Faster response on mobile
-  const DEBOUNCE_DELAY = window.innerWidth < 768 ? 8 : 16 // Smoother on mobile (~120fps)
-  const MIN_DRAG_DISTANCE = window.innerWidth < 768 ? 5 : 10 // Less distance needed on mobile
-  const VELOCITY_THRESHOLD = window.innerWidth < 768 ? 0.3 : 0.5 // More responsive on mobile
-  const MAX_HOVER_TIME = window.innerWidth < 768 ? 300 : 500 // Shorter max hover on mobile
-  const TOUCH_RADIUS = 40 // Touch target expansion for better accuracy
+  // Additional refs needed for tracking state
+  const currentPathRef = useRef<Array<{ row: number; col: number }>>([])
+  const lastPositionRef = useRef<{ row: number; col: number } | null>(null)
 
-  // Cleanup timeouts on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current)
-      }
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current)
-      }
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
+      if (throttleFrameRef.current) {
+        cancelAnimationFrame(throttleFrameRef.current)
+      }
     }
   }, [])
 
-  // Advanced gesture state management
-  const updateGestureState = useCallback((newState: 'idle' | 'starting' | 'dragging' | 'completing') => {
-    gestureStateRef.current = newState
-  }, [])
+  // Clear path when board rotates
+  useEffect(() => {
+    setCurrentPath([])
+    currentPathRef.current = []
+    onPathChange([])
+  }, [rotation, onPathChange])
 
-  // Calculate movement velocity for adaptive thresholds
-  const calculateMovementVelocity = useCallback((currentTime: number, distance: number) => {
-    const timeDelta = currentTime - lastMoveTimeRef.current
-    if (timeDelta > 0) {
-      const velocity = distance / timeDelta
-      movementVelocityRef.current = velocity
-      return velocity
-    }
-    return movementVelocityRef.current
-  }, [])
-
-  // Adaptive movement threshold based on velocity
-  const getAdaptiveThreshold = useCallback(() => {
-    const baseThreshold = MOVEMENT_THRESHOLD
-    const velocity = movementVelocityRef.current
-    
-    // For fast movements, reduce threshold for better responsiveness
-    // For slow movements, increase threshold to prevent jitter
-    if (velocity > VELOCITY_THRESHOLD * 2) {
-      return Math.max(baseThreshold * 0.7, 2) // Faster = more sensitive
-    } else if (velocity < VELOCITY_THRESHOLD * 0.5) {
-      return baseThreshold * 1.5 // Slower = less sensitive
-    }
-    return baseThreshold
-  }, [])
+  // Sync currentPathRef with currentPath
+  useEffect(() => {
+    currentPathRef.current = currentPath
+  }, [currentPath])
 
   // Utility functions needed by handleMouseEnter
   const isAdjacent = (pos1: { row: number; col: number }, pos2: { row: number; col: number }): boolean => {
@@ -152,109 +113,32 @@ export function LetterGrid({
     [isDragging, currentPath, onPathChange],
   )
 
-  // Precise letter-centered detection - only activate when directly on letter
+  // Get tile from screen coordinates - simplified version
   const findButtonAtPoint = useCallback((x: number, y: number) => {
-    for (const [key, rect] of buttonRectsRef.current) {
-      // Check if point is within the button bounds (letter area)
-      if (
-        x >= rect.left &&
-        x <= rect.right &&
-        y >= rect.top &&
-        y <= rect.bottom
-      ) {
-        const [row, col] = key.split('-').map(Number)
-        return { row, col }
-      }
+    if (!gridRef.current || !isFinite(x) || !isFinite(y)) return null
+    
+    const elements = document.elementsFromPoint(x, y)
+    const tileElement = elements.find(el => el.dataset && el.dataset.row)
+    
+    if (tileElement) {
+      const row = parseInt(tileElement.dataset.row!)
+      const col = parseInt(tileElement.dataset.col!)
+      return { row, col }
     }
     return null
   }, [])
 
-  // Debounced position update
-  const debouncedPositionUpdate = useCallback((buttonPos: { row: number; col: number }, currentTime: number) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current)
+  // Get coordinates from both mouse and touch events
+  const getEventCoordinates = useCallback((e: MouseEvent | TouchEvent) => {
+    if ('touches' in e && e.touches && e.touches.length > 0) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    } else if ('changedTouches' in e && e.changedTouches && e.changedTouches.length > 0) {
+      return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }
+    } else if ('clientX' in e) {
+      return { x: e.clientX, y: e.clientY }
     }
-
-    debounceTimeoutRef.current = window.setTimeout(() => {
-      const lastProcessed = lastPositionRef.current
-      if (lastProcessed && lastProcessed.row === buttonPos.row && lastProcessed.col === buttonPos.col) {
-        return
-      }
-
-      lastPositionRef.current = { row: buttonPos.row, col: buttonPos.col }
-      lastMoveTimeRef.current = currentTime
-      handleMouseEnter(buttonPos.row, buttonPos.col)
-    }, DEBOUNCE_DELAY)
-  }, [handleMouseEnter])
-
-  // Enhanced movement detection with adaptive thresholds
-  const processMovement = useCallback((x: number, y: number, currentTime: number) => {
-    if (!isDragging || !gridRef.current) return
-
-    const buttonPos = findButtonAtPoint(x, y)
-    if (!buttonPos) return
-
-    // Calculate movement distance if we have a start position
-    let movementDistance = 0
-    if (dragStartPositionRef.current) {
-      const dx = x - dragStartPositionRef.current.x
-      const dy = y - dragStartPositionRef.current.y
-      movementDistance = Math.sqrt(dx * dx + dy * dy)
-      totalMovementRef.current += movementDistance
-    }
-
-    // Calculate velocity and get adaptive threshold
-    const velocity = calculateMovementVelocity(currentTime, movementDistance)
-    const threshold = getAdaptiveThreshold()
-
-    // Only process significant movements or when crossing letter boundaries
-    const lastProcessed = lastPositionRef.current
-    const isDifferentPosition = !lastProcessed || 
-      lastProcessed.row !== buttonPos.row || 
-      lastProcessed.col !== buttonPos.col
-
-    const currentTile = currentTileRef.current
-    const isNewTile = !currentTile || 
-      currentTile.row !== buttonPos.row || 
-      currentTile.col !== buttonPos.col
-
-    if (isNewTile) {
-      currentTileRef.current = buttonPos
-      tileHoverStartRef.current = currentTime
-    }
-
-    if (isDifferentPosition && (movementDistance > threshold || totalMovementRef.current > MIN_DRAG_DISTANCE)) {
-      // Check hover duration before selection
-      const hoverDuration = currentTime - tileHoverStartRef.current
-      if (hoverDuration > MAX_HOVER_TIME) {
-        return
-      }
-
-      // Clear any existing hover timeout
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current)
-        hoverTimeoutRef.current = null
-      }
-
-      setIsHovering(true)
-      debouncedPositionUpdate(buttonPos, currentTime)
-
-      // Set hover timeout for smooth exit
-      hoverTimeoutRef.current = window.setTimeout(() => {
-        setIsHovering(false)
-      }, HOVER_TIMEOUT)
-    }
-  }, [isDragging, findButtonAtPoint, calculateMovementVelocity, getAdaptiveThreshold, debouncedPositionUpdate])
-
-  // Sync refs with state for zero-latency access
-  useEffect(() => {
-    setCurrentPath(selectedPath)
-    currentPathRef.current = selectedPath
-  }, [selectedPath])
-
-  useEffect(() => {
-    isDraggingRef.current = isDragging
-  }, [isDragging])
+    return { x: 0, y: 0 }
+  }, [])
 
   // Ultra-fast button rect caching with viewport coordinates
   const cacheButtonRects = useCallback(() => {

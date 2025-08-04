@@ -1,12 +1,14 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { Calendar, Clock, Target, Trophy, Zap, TrendingUp } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Calendar, Clock, Target, Trophy, Zap, TrendingUp, ChevronDown, ChevronUp } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useDailyStats } from "@/hooks/use-daily-stats"
+import { useState } from "react"
 
 export function DailyStats() {
   const { stats, formatTime, loading } = useDailyStats()
+  const [isExpanded, setIsExpanded] = useState(false)
 
   if (loading) {
     return (
@@ -71,58 +73,74 @@ export function DailyStats() {
   ]
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-4"
-    >
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">📊 Daily Stats</h2>
-        <p className="text-gray-600">Track your progress and performance</p>
-      </div>
+    <div className="neomorphic-large bg-gradient-to-br from-gray-50 to-gray-100">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full p-4 flex items-center justify-between text-gray-700 hover:bg-transparent"
+      >
+        <span className="font-semibold">📊 Daily Stats</span>
+        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+      </button>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {statCards.map((stat, index) => (
+      <AnimatePresence>
+        {isExpanded && (
           <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
           >
-            <Card className="neomorphic-small hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  {stat.title}
-                </CardTitle>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-800">{stat.value}</div>
-                <CardDescription className="text-xs text-gray-500">
-                  {stat.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+            <div className="px-4 pb-4 space-y-4">
+              <div className="text-center">
+                <p className="text-gray-600">Track your progress and performance</p>
+              </div>
 
-      {stats.totalScore > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="text-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg neomorphic-small"
-        >
-          <p className="text-lg font-semibold text-gray-700">
-            Total Score: <span className="text-blue-600">{stats.totalScore}</span> points
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            Keep up the great work! 🎯
-          </p>
-        </motion.div>
-      )}
-    </motion.div>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                {statCards.map((stat, index) => (
+                  <motion.div
+                    key={stat.title}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <Card className="neomorphic-small hover:shadow-lg transition-shadow duration-200">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-gray-600">
+                          {stat.title}
+                        </CardTitle>
+                        <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-gray-800">{stat.value}</div>
+                        <CardDescription className="text-xs text-gray-500">
+                          {stat.description}
+                        </CardDescription>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+
+              {stats.totalScore > 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="text-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg neomorphic-small"
+                >
+                  <p className="text-lg font-semibold text-gray-700">
+                    Total Score: <span className="text-blue-600">{stats.totalScore}</span> points
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Keep up the great work! 🎯
+                  </p>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }

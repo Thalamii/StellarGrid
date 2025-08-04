@@ -142,23 +142,83 @@ function generateBoard(dateString: string): string[][] {
   return board
 }
 
+function generateBoardWithMinWords(dateString: string, minWords: number = 50): { board: string[][], wordCount: number, attempts: number, allWords: string[] } {
+  const baseSeed = generateDateSeed(dateString)
+  let attempts = 0
+  const maxAttempts = 100 // Prevent infinite loops
+  
+  // Build trie once
+  const trie = new TrieNode()
+  words3.forEach((word) => trie.addWord(word))
+  
+  while (attempts < maxAttempts) {
+    attempts++
+    // Use base seed + attempts to get different boards while keeping date deterministic
+    const seedVariant = baseSeed + attempts
+    const shuffledDice = shuffleArray(BOGGLE_DICE, seedVariant)
+    
+    const board: string[][] = Array(4)
+      .fill(null)
+      .map(() => Array(4).fill(""))
+    
+    for (let i = 0; i < 16; i++) {
+      const die = shuffledDice[i]
+      const faceIndex = Math.floor(seededRandom(seedVariant + i + 100) * 6)
+      const letter = die[faceIndex]
+      
+      const row = Math.floor(i / 4)
+      const col = i % 4
+      board[row][col] = letter
+    }
+    
+    // Test this board
+    const solver = new BoardSolver(board, trie)
+    solver.findAllWords()
+    const wordCount = solver.answers.size
+    const allWords = Array.from(solver.answers).sort()
+    
+    if (wordCount >= minWords) {
+      return { board, wordCount, attempts, allWords }
+    }
+  }
+  
+  // Fallback: return the last generated board even if it doesn't meet criteria
+  console.warn(`Could not generate board with ${minWords}+ words after ${maxAttempts} attempts`)
+  const fallbackSeed = baseSeed + maxAttempts
+  const shuffledDice = shuffleArray(BOGGLE_DICE, fallbackSeed)
+  
+  const board: string[][] = Array(4)
+    .fill(null)
+    .map(() => Array(4).fill(""))
+  
+  for (let i = 0; i < 16; i++) {
+    const die = shuffledDice[i]
+    const faceIndex = Math.floor(seededRandom(fallbackSeed + i + 100) * 6)
+    const letter = die[faceIndex]
+    
+    const row = Math.floor(i / 4)
+    const col = i % 4
+    board[row][col] = letter
+  }
+  
+  const solver = new BoardSolver(board, trie)
+  solver.findAllWords()
+  const allWords = Array.from(solver.answers).sort()
+  
+  return { board, wordCount: solver.answers.size, attempts, allWords }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get("date") || new Date().toISOString().split("T")[0]
+    const minWords = parseInt(searchParams.get("minWords") || "50") // Allow customization via URL param
 
-    // Generate board
-    const board = generateBoard(date)
+    // Generate board with minimum word count guarantee
+    const { board, wordCount, attempts, allWords } = generateBoardWithMinWords(date, minWords)
+    console.log(`Generated board for ${date} with ${wordCount} words in ${attempts} attempt(s)`)
 
-    // Build trie from dictionary
-    const trie = new TrieNode()
-    words3.forEach((word) => trie.addWord(word))
-
-    // Find all possible words
-    const solver = new BoardSolver(board, trie)
-    solver.findAllWords()
-
-    const allPossibleWords = Array.from(solver.answers).sort()
+    const allPossibleWords = allWords
     
     // Take first 50 words as target, rest as bonus
     const targetWords = allPossibleWords.slice(0, 50)
@@ -172,9 +232,14 @@ export async function GET(request: NextRequest) {
         possibleWords: allPossibleWords, // All words for validation
         targetWords: targetWords, // First 50 words for completion
         bonusWords: bonusWords, // Additional words for bonus points
-        totalPossibleWords: targetWords.length, // 50 for completion calculation
+        totalPossibleWords: Math.min(targetWords.length, 50), // Ensure exactly 50 for completion
         totalAllWords: allPossibleWords.length, // Total for stats
         boardString: board.flat().join(""),
+        generationStats: {
+          attempts,
+          totalWordsFound: wordCount,
+          meetsMinimum: wordCount >= minWords
+        }
       },
     })
   } catch (error) {

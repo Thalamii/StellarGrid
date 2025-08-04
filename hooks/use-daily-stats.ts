@@ -101,7 +101,21 @@ export function useDailyStats() {
       const today = new Date().toISOString().split('T')[0];
       const savedStats = localStorage.getItem(`dailyStats_${today}`);
       if (savedStats) {
-        setStats(JSON.parse(savedStats));
+        console.log('Loading stats from localStorage:', savedStats);
+        const parsedStats = JSON.parse(savedStats);
+        setStats(parsedStats);
+      } else {
+        console.log('No localStorage stats found, using default values');
+        // Set default stats if no localStorage data exists
+        setStats({
+          completionTime: null,
+          streak: 0,
+          averageCompletionTime: null,
+          gamesPlayed: 0,
+          gamesCompleted: 0,
+          bestTime: null,
+          totalScore: 0
+        });
       }
     } finally {
       setLoading(false);
@@ -156,6 +170,7 @@ export function useDailyStats() {
 
   // Start a new game session (only count unique daily games)
   const startSession = useCallback(async () => {
+    console.log('🎮 Starting new game session...');
     const session: GameSession = {
       startTime: new Date(),
       completed: false,
@@ -295,6 +310,14 @@ export function useDailyStats() {
     const completionTime = Math.floor((endTime.getTime() - currentSession.startTime.getTime()) / 1000);
     const isCompleted = wordsFound >= targetWords;
 
+    console.log('🏁 Completing session:', {
+      finalScore,
+      wordsFound,
+      targetWords,
+      completionTime: `${completionTime}s`,
+      isCompleted
+    });
+
     const updatedSession = {
       ...currentSession,
       endTime,
@@ -305,7 +328,40 @@ export function useDailyStats() {
     const sessionId = getSessionId();
     const today = new Date().toISOString().split('T')[0];
     
-    if (isCompleted) {
+    // Always update localStorage stats regardless of database availability
+    const savedStats = localStorage.getItem(`dailyStats_${today}`);
+    const currentStats = savedStats ? JSON.parse(savedStats) : {
+      completionTime: null,
+      streak: 0,
+      averageCompletionTime: null,
+      gamesPlayed: 0,
+      gamesCompleted: 0,
+      bestTime: null,
+      totalScore: 0
+    };
+    
+    const newStats = {
+      ...currentStats,
+      completionTime: isCompleted ? completionTime : currentStats.completionTime,
+      gamesCompleted: isCompleted ? (currentStats.gamesCompleted || 0) + 1 : currentStats.gamesCompleted,
+      streak: isCompleted ? Math.max((currentStats.streak || 0), 1) : currentStats.streak,
+      totalScore: (currentStats.totalScore || 0) + finalScore,
+      bestTime: isCompleted ? 
+        (currentStats.bestTime ? Math.min(currentStats.bestTime, completionTime) : completionTime) : 
+        currentStats.bestTime,
+      averageCompletionTime: isCompleted ? 
+        (currentStats.averageCompletionTime ? 
+          Math.floor(((currentStats.averageCompletionTime * (currentStats.gamesCompleted || 0)) + completionTime) / ((currentStats.gamesCompleted || 0) + 1)) :
+          completionTime) :
+        currentStats.averageCompletionTime
+    };
+    
+    console.log('💾 Updating localStorage stats:', newStats);
+    localStorage.setItem(`dailyStats_${today}`, JSON.stringify(newStats));
+    setStats(newStats);
+    
+    try {
+      if (isCompleted) {
       // Update streak in daily_streaks
       const { data: streakData } = await supabase
         .from('daily_streaks')
@@ -387,18 +443,20 @@ export function useDailyStats() {
         created_at: new Date().toISOString()
       });
 
-    // Re-load stats to reflect latest streak and games played
-    loadStats();
+    } catch (error) {
+      console.error('Error saving completion to database, but localStorage stats already updated:', error);
+    } finally {
+      // Always update the current session state regardless of database errors
+      setCurrentSession(updatedSession);
+    }
 
-    setCurrentSession(updatedSession);
-
-  }, [currentSession, stats, saveStats, loadStats]);
+  }, [currentSession, loadStats]);
 
   // Format time helper
   const formatTime = useCallback((seconds: number | null): string => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    if (!seconds || seconds <= 0) return '--:--';
+    const mins = Math.floor(Math.abs(seconds) / 60);
+    const secs = Math.abs(seconds) % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }, []);
 

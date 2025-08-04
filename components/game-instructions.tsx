@@ -29,13 +29,52 @@ export function GameInstructions() {
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-4">
-              <div className="flex items-start space-x-3">
-                <MousePointer className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
+              <div className="flex items-center space-x-3">
+                <Target className="w-5 h-5 text-blue-500 flex-shrink-0" />
                 <div>
-                  <h4 className="font-medium text-gray-800">Drag to Select</h4>
+                  <h4 className="font-medium text-gray-800">Objective</h4>
                   <p className="text-sm text-gray-600">
-                    Click and drag across adjacent letters to form words. Letters can be connected horizontally,
-                    vertically, or diagonally.
+                    Find as many valid words as possible by dragging across letters in the grid.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <MousePointer className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium text-gray-800">Drag to Build Words</h4>
+                  <p className="text-sm text-gray-600">
+                    Click and drag across adjacent letters to form words. Each letter can only be used once per word.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <MousePointer className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium text-gray-800">Reverse Selection</h4>
+                  <p className="text-sm text-gray-600">
+                    Drag back to the previous letter to undo your last selection and change direction.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <RotateCw className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium text-gray-800">Rotate Freely</h4>
+                  <p className="text-sm text-gray-600">
+                    Rotate the board as many times as you want to find new word combinations from different angles.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <Target className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium text-gray-800">Word Requirements</h4>
+                  <p className="text-sm text-gray-600">
+                    Words must be at least 4 letters long and exist in the dictionary.
                   </p>
                 </div>
               </div>
@@ -43,7 +82,7 @@ export function GameInstructions() {
               <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-3 rounded-lg border-l-4 border-yellow-400">
                 <h4 className="font-medium text-yellow-800 mb-1">Scoring</h4>
                 <p className="text-sm text-yellow-700">
-                  Earn 1 point per letter in each word you find. Longer words = higher scores!
+                  Earn 1 point per letter in each valid word you find
                 </p>
               </div>
             </div>

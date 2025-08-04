@@ -10,6 +10,7 @@ import { GameStats } from "./game-stats"
 import { FoundWordsList } from "./found-words-list"
 import { AnimatedScore } from "./animated-score"
 import { DailyStats } from "./daily-stats"
+import { SEOAccordion } from "./seo-accordion"
 import { useGameState } from "@/hooks/use-game-state"
 import { useDailyStats } from "@/hooks/use-daily-stats"
 import { useToast } from "@/hooks/use-toast"
@@ -153,7 +154,7 @@ export function WordGridGame() {
 
         // Complete session if puzzle is finished (only first time)
         if (isPuzzleComplete) {
-          completeSession(newScore, gameState.totalPossibleWords, gameState.totalPossibleWords)
+          completeSession(newScore, newFoundWords.length, gameState.totalPossibleWords)
         }
 
         // Different toasts based on word type
@@ -334,6 +335,8 @@ export function WordGridGame() {
         <FoundWordsList words={gameState.foundWords} />
         
         <DailyStats />
+        
+        <SEOAccordion />
       </div>
       
       <AnimatedScore

@@ -12,12 +12,12 @@ interface GameState {
   completionRate: number
 }
 
-export async function saveGameProgress(userId: string, gameState: GameState) {
+export async function saveGameProgress(sessionId: string, gameState: GameState) {
   try {
     const today = new Date().toISOString().split("T")[0]
 
     const gameData: Partial<DailyGame> = {
-      user_id: userId,
+      session_id: sessionId,
       game_date: today,
       board: gameState.board,
       found_words: gameState.foundWords,
@@ -31,7 +31,7 @@ export async function saveGameProgress(userId: string, gameState: GameState) {
     const { data, error } = await supabase
       .from("daily_games")
       .upsert(gameData, {
-        onConflict: "user_id,game_date",
+        onConflict: "session_id,game_date",
       })
       .select()
 
@@ -47,14 +47,14 @@ export async function saveGameProgress(userId: string, gameState: GameState) {
   }
 }
 
-export async function loadGameProgress(userId: string) {
+export async function loadGameProgress(sessionId: string) {
   try {
     const today = new Date().toISOString().split("T")[0]
 
     const { data, error } = await supabase
       .from("daily_games")
       .select("*")
-      .eq("user_id", userId)
+      .eq("session_id", sessionId)
       .eq("game_date", today)
       .single()
 
@@ -71,10 +71,10 @@ export async function loadGameProgress(userId: string) {
   }
 }
 
-export async function createOrUpdateUserProfile(userId: string, updates: Partial<UserProfile> = {}) {
+export async function createOrUpdateUserProfile(sessionId: string, updates: Partial<UserProfile> = {}) {
   try {
     const profileData: Partial<UserProfile> = {
-      id: userId,
+      session_id: sessionId,
       is_anonymous: false,
       total_games_played: 0,
       total_words_found: 0,
@@ -88,7 +88,7 @@ export async function createOrUpdateUserProfile(userId: string, updates: Partial
     const { data, error } = await supabase
       .from("user_profiles")
       .upsert(profileData, {
-        onConflict: "id",
+        onConflict: "session_id",
       })
       .select()
 
@@ -104,9 +104,9 @@ export async function createOrUpdateUserProfile(userId: string, updates: Partial
   }
 }
 
-export async function getUserProfile(userId: string) {
+export async function getUserProfile(sessionId: string) {
   try {
-    const { data, error } = await supabase.from("user_profiles").select("*").eq("id", userId).single()
+    const { data, error } = await supabase.from("user_profiles").select("*").eq("session_id", sessionId).single()
 
     if (error && error.code !== "PGRST116") {
       console.error("Error getting user profile:", error)
@@ -120,10 +120,10 @@ export async function getUserProfile(userId: string) {
   }
 }
 
-export async function saveGameStatistics(userId: string, stats: Partial<GameStatistics>) {
+export async function saveGameStatistics(sessionId: string, stats: Partial<GameStatistics>) {
   try {
     const statisticsData: Partial<GameStatistics> = {
-      user_id: userId,
+      session_id: sessionId,
       date: new Date().toISOString().split("T")[0],
       created_at: new Date().toISOString(),
       ...stats,
