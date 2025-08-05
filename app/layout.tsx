@@ -9,10 +9,10 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "WordGrid - Daily Square Words Game",
+  title: "WordGrid - Daily Square Word Search Game",
   description:
     "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily.",
-  keywords: "Squardle, daily squardle, daily boggle, 4x4 boggle game, boogle word game, square words game, word squares, word squares game, square words, word grid game, boggle game, word connect, letter grid, daily puzzle, word game, puzzle, word search, brain game, vocabulary, word puzzle game, daily challenge, brain training, vocabulary builder, vocabulary game",
+  keywords: "Squardle, daily squardle, daily boggle, 4x4 boggle game, boogle word game, word search game, square words game, word squares, word squares game, square words, word grid game, boggle game, word connect, letter grid, daily puzzle, word game, puzzle, word search, brain game, vocabulary, word puzzle game, daily challenge, brain training, vocabulary builder, vocabulary game",
   authors: [{ name: "WordGrid Team" }],
   creator: "WordGrid",
   publisher: "WordGrid",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "WordGrid - Daily Square Words Game",
+    title: "WordGrid - Daily Square Word Search Game",
     description: "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily.",
     url: "https://wordgrid.game",
     siteName: "WordGrid",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "WordGrid - Daily Square Words Game",
+        alt: "WordGrid - Daily Square Word Search Game",
       },
     ],
     locale: "en_US",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "WordGrid - Daily Square Words Game",
+    title: "WordGrid - Daily Square Word Search Game",
     description: "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily.",
     images: ["/og-image.png"],
   },
@@ -92,7 +92,7 @@ export default function RootLayout({
         <meta name="content-language" content="en" />
         
         {/* Additional keyword targeting */}
-        <meta name="subject" content="Daily Square Words Game - Squardle Alternative" />
+        <meta name="subject" content="Daily Square Word Search Game - Squardle Alternative" />
         <meta name="abstract" content="Play WordGrid, the best alternative to Squardle and daily boggle games. Connect letters in a 4x4 grid to find words." />
         <meta name="topic" content="word games, puzzle games, daily games" />
         <meta name="summary" content="WordGrid: Daily word puzzle game similar to Squardle and Boggle" />
@@ -107,8 +107,8 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              name: "WordGrid - Daily Square Words Game",
-              alternateName: ["WordGrid", "Square Words Game", "Daily Squardle"],
+              name: "WordGrid - Daily Square Word Search Game",
+              alternateName: ["WordGrid", "Square Word Search Game", "Daily Squardle"],
               description:
                 "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily. Similar to Squardle and daily boggle games.",
               url: "https://wordgrid.game",

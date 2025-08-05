@@ -1,19 +1,19 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { Calendar, Clock, Target, Trophy, Zap, TrendingUp, ChevronDown, ChevronUp } from "lucide-react"
+import { Target, Trophy, Zap, ChevronDown, ChevronUp } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useDailyStats } from "@/hooks/use-daily-stats"
 import { useState } from "react"
 
 export function DailyStats() {
-  const { stats, formatTime, loading } = useDailyStats()
+  const { stats, loading } = useDailyStats()
   const [isExpanded, setIsExpanded] = useState(false)
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
+      <div className="grid grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader className="pb-2">
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -29,11 +29,18 @@ export function DailyStats() {
 
   const statCards = [
     {
-      title: "Today's Time",
-      value: formatTime(stats.completionTime),
-      icon: Clock,
-      description: "Time to complete",
+      title: "Games Played",
+      value: stats.gamesPlayed.toString(),
+      icon: Target,
+      description: "Daily puzzles played",
       color: "text-blue-600"
+    },
+    {
+      title: "Games Won",
+      value: stats.gamesWon.toString(),
+      icon: Trophy,
+      description: "Puzzles completed",
+      color: "text-green-600"
     },
     {
       title: "Streak",
@@ -41,34 +48,6 @@ export function DailyStats() {
       icon: Zap,
       description: "Days in a row",
       color: "text-orange-600"
-    },
-    {
-      title: "Average Time",
-      value: formatTime(stats.averageCompletionTime),
-      icon: TrendingUp,
-      description: "Overall average",
-      color: "text-green-600"
-    },
-    {
-      title: "Best Time",
-      value: formatTime(stats.bestTime),
-      icon: Trophy,
-      description: "Personal record",
-      color: "text-yellow-600"
-    },
-    {
-      title: "Games Played",
-      value: stats.gamesPlayed.toString(),
-      icon: Target,
-      description: "Total attempts",
-      color: "text-purple-600"
-    },
-    {
-      title: "Completion Rate",
-      value: stats.gamesPlayed > 0 ? `${Math.round((stats.gamesCompleted / stats.gamesPlayed) * 100)}%` : "0%",
-      icon: Calendar,
-      description: "Success rate",
-      color: "text-pink-600"
     }
   ]
 
@@ -96,7 +75,7 @@ export function DailyStats() {
                 <p className="text-gray-600">Track your progress and performance</p>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 {statCards.map((stat, index) => (
                   <motion.div
                     key={stat.title}
@@ -121,22 +100,6 @@ export function DailyStats() {
                   </motion.div>
                 ))}
               </div>
-
-              {stats.totalScore > 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                  className="text-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg neomorphic-small"
-                >
-                  <p className="text-lg font-semibold text-gray-700">
-                    Total Score: <span className="text-blue-600">{stats.totalScore}</span> points
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Keep up the great work! 🎯
-                  </p>
-                </motion.div>
-              )}
             </div>
           </motion.div>
         )}

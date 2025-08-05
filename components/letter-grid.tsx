@@ -32,26 +32,19 @@ export function LetterGrid({
   const [trailPositions, setTrailPositions] = useState<Array<{ x: number; y: number }>>([])
   const [isCompleting, setIsCompleting] = useState(false)
   
-  // Essential refs for performance and state tracking
+  // Consolidated refs for optimal performance
   const gridRef = useRef<HTMLDivElement>(null)
-  const animationFrameRef = useRef<number | null>(null)
+  const rafRef = useRef<number | null>(null)
   const buttonRectsRef = useRef<Map<string, DOMRect>>(new Map())
-  
-  // Throttling ref for smooth performance
-  const throttleFrameRef = useRef<number | null>(null)
-  
-  // Additional refs needed for tracking state
   const currentPathRef = useRef<Array<{ row: number; col: number }>>([])
   const lastPositionRef = useRef<{ row: number; col: number } | null>(null)
+  const isProcessingRef = useRef(false)
 
-  // Cleanup on unmount
+  // Consolidated cleanup on unmount
   useEffect(() => {
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
-      if (throttleFrameRef.current) {
-        cancelAnimationFrame(throttleFrameRef.current)
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
       }
     }
   }, [])
@@ -184,12 +177,14 @@ export function LetterGrid({
     setTrailPositions(positions)
   }, [])
 
-  // Immediate trail updates
+  // Optimized trail updates with batching
   useLayoutEffect(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current)
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
     }
-    animationFrameRef.current = requestAnimationFrame(() => {
+    
+    // Batch multiple updates within same frame
+    rafRef.current = requestAnimationFrame(() => {
       updateTrailPositions(currentPath)
     })
   }, [currentPath, updateTrailPositions])
@@ -268,74 +263,45 @@ export function LetterGrid({
     
     // Keep trail and highlights visible longer to show validation colors
     setTimeout(() => {
-      if (!isCompleting) { // Only clear if not in middle of completion
-        setCurrentPath([])
-        setTrailPositions([])
-        onPathChange([])
-      }
+      setCurrentPath([])
+      setTrailPositions([])
+      onPathChange([])
     }, 1500) // Increased from 1000ms to 1500ms to see colors better
   }, [isDragging, currentPath, board, onWordComplete, onPathChange, isCompleting])
 
-  // Enhanced global mouse and touch tracking for ultra-smooth movement
+  // Optimized global event handling with throttling
   useEffect(() => {
-    const handleGlobalMouseUp = (e: MouseEvent) => {
+    const handleGlobalPointerMove = (e: PointerEvent) => {
+      if (!isDragging || !gridRef.current || isProcessingRef.current) return
+      
+      isProcessingRef.current = true
+      
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+      }
+      
+      rafRef.current = requestAnimationFrame(() => {
+        const buttonPos = findButtonAtPoint(e.clientX, e.clientY)
+        if (buttonPos) {
+          handleMouseEnter(buttonPos.row, buttonPos.col)
+        }
+        isProcessingRef.current = false
+      })
+    }
+
+    const handleGlobalPointerUp = () => {
       if (isDragging) {
         handleMouseUp()
       }
     }
 
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (!isDragging || !gridRef.current) return
-      
-      const buttonPos = findButtonAtPoint(e.clientX, e.clientY)
-      
-      if (buttonPos) {
-        // Prevent duplicate processing using lastPositionRef
-        const lastProcessed = lastPositionRef.current
-        if (lastProcessed && lastProcessed.row === buttonPos.row && lastProcessed.col === buttonPos.col) {
-          return
-        }
-        
-        lastPositionRef.current = { row: buttonPos.row, col: buttonPos.col }
-        handleMouseEnter(buttonPos.row, buttonPos.col)
-      }
-    }
-
-    const handleGlobalTouchMove = (e: TouchEvent) => {
-      if (!isDragging || !gridRef.current) return
-      
-      const touch = e.touches[0]
-      if (!touch) return
-      
-      const buttonPos = findButtonAtPoint(touch.clientX, touch.clientY)
-      
-      if (buttonPos) {
-        const lastProcessed = lastPositionRef.current
-        if (lastProcessed && lastProcessed.row === buttonPos.row && lastProcessed.col === buttonPos.col) {
-          return
-        }
-        
-        lastPositionRef.current = { row: buttonPos.row, col: buttonPos.col }
-        handleMouseEnter(buttonPos.row, buttonPos.col)
-      }
-    }
-
-    const handleGlobalTouchEnd = (e: TouchEvent) => {
-      if (isDragging) {
-        handleMouseUp()
-      }
-    }
-
-    document.addEventListener('mouseup', handleGlobalMouseUp, { passive: false })
-    document.addEventListener('mousemove', handleGlobalMouseMove, { passive: false })
-    document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false })
-    document.addEventListener('touchend', handleGlobalTouchEnd, { passive: false })
+    // Use pointer events for unified mouse/touch handling
+    document.addEventListener('pointerup', handleGlobalPointerUp, { passive: true })
+    document.addEventListener('pointermove', handleGlobalPointerMove, { passive: true })
 
     return () => {
-      document.removeEventListener('mouseup', handleGlobalMouseUp)
-      document.removeEventListener('mousemove', handleGlobalMouseMove)
-      document.removeEventListener('touchmove', handleGlobalTouchMove)
-      document.removeEventListener('touchend', handleGlobalTouchEnd)
+      document.removeEventListener('pointerup', handleGlobalPointerUp)
+      document.removeEventListener('pointermove', handleGlobalPointerMove)
     }
   }, [isDragging, handleMouseUp, handleMouseEnter, findButtonAtPoint])
 
@@ -441,13 +407,6 @@ export function LetterGrid({
       const buttonPos = findButtonAtPoint(touch.clientX, touch.clientY)
       
       if (buttonPos) {
-        // Prevent duplicate processing using lastPositionRef
-        const lastProcessed = lastPositionRef.current
-        if (lastProcessed && lastProcessed.row === buttonPos.row && lastProcessed.col === buttonPos.col) {
-          return
-        }
-        
-        lastPositionRef.current = { row: buttonPos.row, col: buttonPos.col }
         handleMouseEnter(buttonPos.row, buttonPos.col)
       }
     },
@@ -538,16 +497,17 @@ export function LetterGrid({
                 data-col={colIndex}
                 className={`
                   relative aspect-square rounded-xl font-bold text-2xl sm:text-3xl
-                  transition-all duration-200 select-none touch-manipulation
-                  min-h-[60px] min-w-[60px] sm:min-h-[70px] sm:min-w-[70px]
+                  transition-all duration-150 select-none touch-manipulation
+                  min-h-[44px] min-w-[44px] sm:min-h-[56px] sm:min-w-[56px] md:min-h-[70px] md:min-w-[70px]
+                  active:scale-95 will-change-transform
                   ${
                     isSelected
                       ? isLastSelected
-                        ? `bg-gradient-to-br ${colors.bg} text-white shadow-lg scale-105` // Full opacity for current target
-                        : `bg-gradient-to-br ${colors.bg} text-white shadow-lg scale-105 opacity-75` // Lower opacity for previous selections
-                      : "neomorphic-small bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300"
+                        ? `bg-gradient-to-br ${colors.bg} text-white shadow-lg scale-105 ring-2 ring-white/30` 
+                        : `bg-gradient-to-br ${colors.bg} text-white shadow-lg scale-105 opacity-80` 
+                      : "neomorphic-small bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 md:hover:scale-102"
                   }
-                  ${isLastSelected ? `ring-4 ${colors.ring} ring-opacity-50` : ""}
+                  ${isLastSelected ? `ring-4 ${colors.ring} ring-opacity-60` : ""}
                 `}
                 onMouseDown={() => handleMouseDown(rowIndex, colIndex)}
                 onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}

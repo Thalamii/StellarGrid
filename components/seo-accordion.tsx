@@ -16,12 +16,12 @@ export function SEOAccordion() {
     {
       id: "what-is-wordgrid",
       title: "What is WordGrid?",
-      content: "WordGrid is a captivating daily word puzzle game that follows the Boggle and Squardle format. Connect letters in a 4x4 grid to discover hidden words, with a new puzzle delivered every day."
+      content: "WordGrid is a captivating daily word search game that follows the Boggle and Squardle format. Connect letters in a 4x4 grid to discover hidden words, with a new puzzle delivered every day."
     },
     {
       id: "more-than-squardle", 
       title: "More Than Just Squardle",
-      content: "Enjoy the excitement of WordGrid, your go-to source for a daily word challenge. Experience features like unlimited board rotations and engaging gameplay."
+      content: "Enjoy the excitement of WordGrid, your go-to source for a daily word challenge. Experience features like unlimited board rotations, engaging gameplay, and classic word search game mechanics."
     },
     {
       id: "key-features",
@@ -51,7 +51,7 @@ export function SEOAccordion() {
     <div className="neomorphic-large bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="p-4">
         <h2 className="font-bold text-lg text-gray-800 mb-4 text-center">
-          📚 About WordGrid - Daily Square Words Game
+          📚 About WordGrid - Daily Square Word Search Game
         </h2>
         
         <div className="space-y-2">

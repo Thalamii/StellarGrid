@@ -13,8 +13,6 @@ import { SEOAccordion } from "./seo-accordion"
 import { InstallPrompt } from "./install-prompt"
 import { useGameState } from "@/hooks/use-game-state"
 import { useDailyStats } from "@/hooks/use-daily-stats"
-import { useToast } from "@/hooks/use-toast"
-import { Toaster } from "@/components/ui/toaster"
 
 interface GameState {
   board: string[][]
@@ -27,14 +25,13 @@ interface GameState {
 }
 
 export function WordGridGame() {
-  const { toast } = useToast()
   const { startSession, completeSession } = useDailyStats()
   const [selectedPath, setSelectedPath] = useState<Array<{ row: number; col: number }>>([])
   const [currentWord, setCurrentWord] = useState("")
   const [wordValidationStatus, setWordValidationStatus] = useState<"valid" | "invalid" | "duplicate" | null>(null)
   const [gameStarted, setGameStarted] = useState(false)
   const [showAnimatedScore, setShowAnimatedScore] = useState(false)
-  const [lastScoredWord, setLastScoredWord] = useState({ word: "", score: 0, isPuzzleComplete: false, isBonusWord: false })
+  const [lastScoredWord, setLastScoredWord] = useState({ word: "", points: 0, isPuzzleComplete: false, isBonusWord: false, isInvalid: false, isDuplicate: false, message: "" })
   const [puzzleCompleted, setPuzzleCompleted] = useState(false)
 
   const initialState: GameState = {
@@ -92,12 +89,16 @@ export function WordGridGame() {
       // Check if word is too short
       if (word.length < 4) {
         setWordValidationStatus("invalid")
-        toast({
-          title: "Too short!",
-          description: `Words must be at least 4 letters long`,
-          variant: "destructive",
-          duration: 1000, // Very quick - 1 second
+        setLastScoredWord({
+          word: upperWord,
+          points: 0,
+          isPuzzleComplete: false,
+          isBonusWord: false,
+          isInvalid: true,
+          isDuplicate: false,
+          message: "Too short! Words must be at least 4 letters long"
         })
+        setShowAnimatedScore(true)
         setCurrentWord("")
         setSelectedPath([])
         return
@@ -106,12 +107,16 @@ export function WordGridGame() {
       // Check if already found
       if (gameState.foundWords.includes(upperWord)) {
         setWordValidationStatus("duplicate")
-        toast({
-          title: "Already found!",
-          description: `You've already found "${upperWord}"`,
-          variant: "default",
-          duration: 1000, // Very quick - 1 second
+        setLastScoredWord({
+          word: upperWord,
+          points: 0,
+          isPuzzleComplete: false,
+          isBonusWord: false,
+          isInvalid: false,
+          isDuplicate: true,
+          message: `Already found "${upperWord}"!`
         })
+        setShowAnimatedScore(true)
         setCurrentWord("")
         setSelectedPath([])
         return
@@ -144,11 +149,23 @@ export function WordGridGame() {
         })
 
         // Show animated score
+        let message = ""
+        if (isPuzzleComplete) {
+          message = "🎉 Amazing! You found all 50 words! 🎉"
+        } else if (isBonusWord) {
+          message = `🌟 Bonus word! +${calculateWordScore(word.length)} points! 🌟`
+        } else {
+          message = `Great word! +${calculateWordScore(word.length)} points!`
+        }
+        
         setLastScoredWord({
           word: upperWord,
-          score: calculateWordScore(word.length),
+          points: calculateWordScore(word.length),
           isPuzzleComplete,
-          isBonusWord
+          isBonusWord,
+          isInvalid: false,
+          isDuplicate: false,
+          message
         })
         setShowAnimatedScore(true)
 
@@ -156,44 +173,24 @@ export function WordGridGame() {
         if (isPuzzleComplete) {
           completeSession(newScore, newFoundWords.length, gameState.totalPossibleWords)
         }
-
-        // Different toasts based on word type
-        if (isPuzzleComplete) {
-          toast({
-            title: "🎉 Puzzle Complete!",
-            description: "Amazing! You found all 50 words!",
-            variant: "default",
-            duration: 2000, // Longer for celebration
-          })
-        } else if (isBonusWord) {
-          toast({
-            title: "🌟 Bonus Word!",
-            description: `+${calculateWordScore(word.length)} bonus points for "${upperWord}"`,
-            variant: "default",
-            duration: 1000,
-          })
-        } else {
-          toast({
-            title: "Great word!",
-            description: `+${calculateWordScore(word.length)} points for "${upperWord}"`,
-            variant: "default",
-            duration: 1000,
-          })
-        }
       } else {
         setWordValidationStatus("invalid")
-        toast({
-          title: "Invalid word",
-          description: `"${upperWord}" is not a valid word`,
-          variant: "destructive",
-          duration: 1000, // Very quick - 1 second
+        setLastScoredWord({
+          word: upperWord,
+          points: 0,
+          isPuzzleComplete: false,
+          isBonusWord: false,
+          isInvalid: true,
+          isDuplicate: false,
+          message: `"${upperWord}" is not a valid word`
         })
+        setShowAnimatedScore(true)
       }
 
       setCurrentWord("")
       setSelectedPath([])
     },
-    [gameState, possibleWordsSet, updateGameState, toast],
+    [gameState, possibleWordsSet, updateGameState, completeSession],
   )
 
   const handleRotate = useCallback(() => {
@@ -324,16 +321,18 @@ export function WordGridGame() {
       </div>
       
       <AnimatedScore
-        score={lastScoredWord.score}
+        points={lastScoredWord.points}
         word={lastScoredWord.word}
         show={showAnimatedScore}
         isPuzzleComplete={lastScoredWord.isPuzzleComplete}
+        isBonusWord={lastScoredWord.isBonusWord}
+        isInvalid={lastScoredWord.isInvalid}
+        isDuplicate={lastScoredWord.isDuplicate}
+        message={lastScoredWord.message}
         onComplete={() => setShowAnimatedScore(false)}
       />
       
       <InstallPrompt wordsFound={gameState.foundWords.length} />
-      
-      <Toaster />
     </>
   )
 }

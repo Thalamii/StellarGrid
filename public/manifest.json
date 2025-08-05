@@ -1,5 +1,5 @@
 {
-  "name": "WordGrid - Daily Word Puzzle Game",
+  "name": "WordGrid - Word Search Game",
   "short_name": "WordGrid",
   "description": "Find words by connecting adjacent letters in a 4x4 grid. New puzzle every day with unlimited rotations.",
   "start_url": "/",
