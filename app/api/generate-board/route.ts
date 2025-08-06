@@ -102,20 +102,36 @@ function generateDateSeed(dateString: string): number {
   for (let i = 0; i < dateString.length; i++) {
     const char = dateString.charCodeAt(i)
     hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32-bit integer
+    hash = hash | 0 // Convert to 32-bit signed integer
   }
   return Math.abs(hash)
 }
 
-function seededRandom(seed: number) {
-  const x = Math.sin(seed) * 10000
-  return x - Math.floor(x)
+// Stateful Linear Congruential Generator for deterministic seeded random
+class SeededRandom {
+  private seed: number
+
+  constructor(seed: number) {
+    this.seed = seed % 2147483647
+    if (this.seed <= 0) this.seed += 2147483646
+  }
+
+  next(): number {
+    this.seed = (this.seed * 16807) % 2147483647
+    return (this.seed - 1) / 2147483646
+  }
+
+  nextInt(max: number): number {
+    return Math.floor(this.next() * max)
+  }
 }
 
 function shuffleArray<T>(array: T[], seed: number): T[] {
   const shuffled = [...array]
+  const rng = new SeededRandom(seed)
+  
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(seededRandom(seed + i) * (i + 1))
+    const j = rng.nextInt(i + 1)
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
   return shuffled
@@ -124,6 +140,7 @@ function shuffleArray<T>(array: T[], seed: number): T[] {
 function generateBoard(dateString: string): string[][] {
   const seed = generateDateSeed(dateString)
   const shuffledDice = shuffleArray(BOGGLE_DICE, seed)
+  const rng = new SeededRandom(seed + 1000) // Different seed for dice rolling
 
   const board: string[][] = Array(4)
     .fill(null)
@@ -131,7 +148,7 @@ function generateBoard(dateString: string): string[][] {
 
   for (let i = 0; i < 16; i++) {
     const die = shuffledDice[i]
-    const faceIndex = Math.floor(seededRandom(seed + i + 100) * 6)
+    const faceIndex = rng.nextInt(6)
     const letter = die[faceIndex] // Keep Q as just Q, not QU
 
     const row = Math.floor(i / 4)
@@ -161,9 +178,10 @@ function generateBoardWithMinWords(dateString: string, minWords: number = 50): {
       .fill(null)
       .map(() => Array(4).fill(""))
     
+    const rng = new SeededRandom(seedVariant + 1000)
     for (let i = 0; i < 16; i++) {
       const die = shuffledDice[i]
-      const faceIndex = Math.floor(seededRandom(seedVariant + i + 100) * 6)
+      const faceIndex = rng.nextInt(6)
       const letter = die[faceIndex]
       
       const row = Math.floor(i / 4)
@@ -191,9 +209,10 @@ function generateBoardWithMinWords(dateString: string, minWords: number = 50): {
     .fill(null)
     .map(() => Array(4).fill(""))
   
+  const fallbackRng = new SeededRandom(fallbackSeed + 1000)
   for (let i = 0; i < 16; i++) {
     const die = shuffledDice[i]
-    const faceIndex = Math.floor(seededRandom(fallbackSeed + i + 100) * 6)
+    const faceIndex = fallbackRng.nextInt(6)
     const letter = die[faceIndex]
     
     const row = Math.floor(i / 4)
