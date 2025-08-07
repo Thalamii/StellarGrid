@@ -1,6 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { words3 } from "@/utils/words3"
 
+// Add these lines after your imports
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
+
 // Boggle dice configuration
 const BOGGLE_DICE = [
   ["R", "I", "F", "O", "B", "X"],
