@@ -256,24 +256,32 @@ export async function GET(request: NextRequest) {
     const targetWords = allPossibleWords.slice(0, 50)
     const bonusWords = allPossibleWords.slice(50)
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        date,
-        board,
-        possibleWords: allPossibleWords, // All words for validation
-        targetWords: targetWords, // First 50 words for completion
-        bonusWords: bonusWords, // Additional words for bonus points
-        totalPossibleWords: Math.min(targetWords.length, 50), // Ensure exactly 50 for completion
-        totalAllWords: allPossibleWords.length, // Total for stats
-        boardString: board.flat().join(""),
-        generationStats: {
-          attempts,
-          totalWordsFound: wordCount,
-          meetsMinimum: wordCount >= minWords
-        }
-      },
-    })
+    const response = NextResponse.json({
+  success: true,
+  data: {
+    date,
+    board,
+    possibleWords: allPossibleWords,
+    targetWords: targetWords,
+    bonusWords: bonusWords,
+    totalPossibleWords: Math.min(targetWords.length, 50),
+    totalAllWords: allPossibleWords.length,
+    boardString: board.flat().join(""),
+    generationStats: {
+      attempts,
+      totalWordsFound: wordCount,
+      meetsMinimum: wordCount >= minWords
+    }
+  },
+})
+
+// Add no-cache headers
+response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+response.headers.set('Pragma', 'no-cache')
+response.headers.set('Expires', '0')
+response.headers.set('Surrogate-Control', 'no-store')
+
+return response
   } catch (error) {
     console.error("Error generating board:", error)
     return NextResponse.json({ success: false, error: "Failed to generate board" }, { status: 500 })
