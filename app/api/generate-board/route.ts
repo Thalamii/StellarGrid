@@ -98,13 +98,20 @@ class BoardSolver {
 }
 
 function generateDateSeed(dateString: string): number {
-  let hash = 0
+  // Use a more robust hash function that creates better distribution
+  let hash = 0x811c9dc5 // FNV offset basis
+  
   for (let i = 0; i < dateString.length; i++) {
-    const char = dateString.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash | 0 // Convert to 32-bit signed integer
+    hash ^= dateString.charCodeAt(i)
+    hash = (hash * 0x01000193) >>> 0 // FNV prime, unsigned 32-bit
   }
-  return Math.abs(hash)
+  
+  // Additional mixing to ensure different dates produce very different seeds
+  hash = ((hash >>> 16) ^ hash) * 0x85ebca6b
+  hash = ((hash >>> 13) ^ hash) * 0xc2b2ae35
+  hash = (hash >>> 16) ^ hash
+  
+  return Math.abs(hash) + 1 // Ensure positive and non-zero
 }
 
 // Stateful Linear Congruential Generator for deterministic seeded random
