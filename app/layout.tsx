@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "your-google-verification-code",
+    google: "Wklyr-qfL1ZXEQxjfxlXvniP_C4khXSUkDEIcupzRfE",
   },
   generator: "WordGrid",
 }
