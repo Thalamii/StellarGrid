@@ -127,10 +127,9 @@ export function AnimatedScore({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          // Accessibility attributes - uncomment when ready to test
-          // role="status"
-          // aria-live="polite" 
-          // aria-label={announceMessage}
+          role="status"
+          aria-live="polite"
+          aria-label={announceMessage}
         >
           <motion.div
             className={`text-white px-6 py-3 rounded-full shadow-lg ${
