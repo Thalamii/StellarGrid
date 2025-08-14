@@ -101,60 +101,116 @@ export default function RootLayout({
         <meta name="coverage" content="Worldwide" />
         <meta name="distribution" content="Global" />
         <meta name="rating" content="General" />
-        <script
+                <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              name: "WordGrid - Daily Square Word Search Game",
-              alternateName: ["WordGrid", "Square Word Search Game", "Daily Squardle"],
-              description:
-                "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily. Similar to Squardle and daily boggle games.",
-              url: "https://wordgrid.fun",
-              applicationCategory: "GameApplication",
-              genre: ["Word Game", "Word Search", "Puzzle Game", "Brain Game"],
-              operatingSystem: "Web Browser",
-              browserRequirements: "Requires JavaScript. Compatible with all modern browsers.",
-              softwareVersion: "1.0",
-              datePublished: "2024-01-01",
-              dateModified: new Date().toISOString().split('T')[0],
-              publisher: {
-                "@type": "Organization",
-                name: "WordGrid",
-                url: "https://wordgrid.fun"
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                name: "WordGrid - Daily Square Word Search Game",
+                alternateName: ["WordGrid", "Square Word Search Game", "Daily Squardle"],
+                description:
+                  "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily. Similar to Squardle and daily boggle games.",
+                url: "https://wordgrid.fun",
+                applicationCategory: "GameApplication",
+                genre: ["Word Game", "Word Search", "Puzzle Game", "Brain Game"],
+                operatingSystem: "Web Browser",
+                browserRequirements: "Requires JavaScript. Compatible with all modern browsers.",
+                softwareVersion: "1.0",
+                datePublished: "2024-01-01",
+                dateModified: new Date().toISOString().split('T')[0],
+                publisher: {
+                  "@type": "Organization",
+                  name: "WordGrid",
+                  url: "https://wordgrid.fun"
+                },
+                creator: {
+                  "@type": "Organization",
+                  name: "WordGrid Team"
+                },
+                offers: {
+                  "@type": "Offer",
+                  price: "0",
+                  priceCurrency: "USD",
+                  availability: "https://schema.org/InStock",
+                  category: "Free Game"
+                },
+                aggregateRating: {
+                  "@type": "AggregateRating",
+                  ratingValue: "4.8",
+                  ratingCount: "1250",
+                  bestRating: "5",
+                  worstRating: "1"
+                },
+                featureList: [
+                  "Daily word search puzzles",
+                  "4x4 letter grid",
+                  "Unlimited board rotations",
+                  "Drag and connect gameplay",
+                  "Progress tracking",
+                  "Mobile and desktop compatible"
+                ],
+                screenshot: "https://wordgrid.fun/og-image.png",
+                gamePlatform: "Web Browser",
+                playMode: "SinglePlayer",
+                keywords: "Squardle, daily squardle, daily boggle, 4x4 boggle game, square words game, word squares, word grid game, boggle game, word connect"
               },
-              creator: {
-                "@type": "Organization",
-                name: "WordGrid Team"
-              },
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "USD",
-                availability: "https://schema.org/InStock",
-                category: "Free Game"
-              },
-              aggregateRating: {
-                "@type": "AggregateRating",
-                ratingValue: "4.8",
-                ratingCount: "1250",
-                bestRating: "5",
-                worstRating: "1"
-              },
-              featureList: [
-                "Daily word search puzzles",
-                "4x4 letter grid",
-                "Unlimited board rotations",
-                "Drag and connect gameplay",
-                "Progress tracking",
-                "Mobile and desktop compatible"
-              ],
-              screenshot: "https://wordgrid.fun/og-image.png",
-              gamePlatform: "Web Browser",
-              playMode: "SinglePlayer",
-              keywords: "Squardle, daily squardle, daily boggle, 4x4 boggle game, square words game, word squares, word grid game, boggle game, word connect"
-            }),
+              {
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: [
+                  {
+                    "@type": "Question",
+                    name: "What is WordGrid?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "WordGrid is a captivating daily word search game that follows the Boggle and Squardle format. Connect letters in a 4x4 grid to discover hidden words, with a new puzzle delivered every day."
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    name: "How do I play WordGrid?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Drag or tap to connect adjacent letters in the 4x4 grid to form words. Words must be at least 4 letters long. You can rotate the board for different perspectives and find up to 50 target words daily."
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Is WordGrid free to play?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes, WordGrid is completely free to play. No downloads, registrations, or payments required. Just visit the website and start playing immediately."
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Is WordGrid similar to Squardle?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes, WordGrid offers a similar experience to Squardle and other daily word games. Like Squardle, it features a 4x4 grid where you connect letters to form words, with a new puzzle each day."
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    name: "How many words can I find in each puzzle?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Each daily WordGrid puzzle contains at least 50 target words to discover. You may find bonus words beyond the target count for extra points."
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Can I play on mobile devices?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes, WordGrid is fully optimized for mobile devices with touch-friendly drag and tap controls. It works seamlessly on smartphones, tablets, and desktop computers."
+                    }
+                  }
+                ]
+              }
+            ]),
           }}
         />
       </head>
