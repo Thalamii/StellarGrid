@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "WordGrid - Daily Square Word Search Game",
   description:
-    "WordGrid is a Boggle-like word search puzzle/game. Glide or tap to connect letters and create words. Fresh words board daily.",
+    "WordGrid is a Boggle-like word search puzzle/game. Glide to connect letters and create words. Fresh words board daily.",
   keywords: "Squardle, daily squardle, daily boggle, 4x4 boggle game, boogle word game, word search game, square words game, word squares, word squares game, square words, word grid game, boggle game, word connect, letter grid, daily puzzle, word game, puzzle, word search, brain game, vocabulary, word puzzle game, daily challenge, brain training, vocabulary builder, vocabulary game",
   authors: [{ name: "WordGrid Team" }],
   creator: "WordGrid",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "WordGrid - Daily Square Word Search Game",
-    description: "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily.",
+    description: "WordGrid is a Boggle-like word connect game. Glide to connect letters and create words. Fresh words board daily.",
     url: "https://wordgrid.fun",
     siteName: "WordGrid",
     images: [
