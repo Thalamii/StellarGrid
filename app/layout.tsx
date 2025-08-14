@@ -21,14 +21,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://wordgrid.game"),
+  metadataBase: new URL("https://wordgrid.fun"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "WordGrid - Daily Square Word Search Game",
     description: "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily.",
-    url: "https://wordgrid.game",
+    url: "https://wordgrid.fun",
     siteName: "WordGrid",
     images: [
       {
@@ -87,7 +87,7 @@ export default function RootLayout({
         
         {/* Game-specific meta tags */}
         <meta name="game-type" content="word-puzzle" />
-        <meta name="game-genre" content="puzzle,word,brain-training" />
+        <meta name="game-genre" content="puzzle,word search,brain-training" />
         <meta name="game-platform" content="web" />
         <meta name="content-language" content="en" />
         
@@ -111,9 +111,9 @@ export default function RootLayout({
               alternateName: ["WordGrid", "Square Word Search Game", "Daily Squardle"],
               description:
                 "WordGrid is a Boggle-like word connect game. Glide or tap to connect letters and create words. Fresh words board daily. Similar to Squardle and daily boggle games.",
-              url: "https://wordgrid.game",
+              url: "https://wordgrid.fun",
               applicationCategory: "GameApplication",
-              genre: ["Word Game", "Puzzle Game", "Brain Game"],
+              genre: ["Word Game", "Word Search", "Puzzle Game", "Brain Game"],
               operatingSystem: "Web Browser",
               browserRequirements: "Requires JavaScript. Compatible with all modern browsers.",
               softwareVersion: "1.0",
@@ -122,7 +122,7 @@ export default function RootLayout({
               publisher: {
                 "@type": "Organization",
                 name: "WordGrid",
-                url: "https://wordgrid.game"
+                url: "https://wordgrid.fun"
               },
               creator: {
                 "@type": "Organization",
@@ -143,14 +143,14 @@ export default function RootLayout({
                 worstRating: "1"
               },
               featureList: [
-                "Daily fresh word puzzles",
+                "Daily word search puzzles",
                 "4x4 letter grid",
                 "Unlimited board rotations",
                 "Drag and connect gameplay",
                 "Progress tracking",
                 "Mobile and desktop compatible"
               ],
-              screenshot: "https://wordgrid.game/og-image.png",
+              screenshot: "https://wordgrid.fun/og-image.png",
               gamePlatform: "Web Browser",
               playMode: "SinglePlayer",
               keywords: "Squardle, daily squardle, daily boggle, 4x4 boggle game, square words game, word squares, word grid game, boggle game, word connect"
