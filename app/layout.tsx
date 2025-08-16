@@ -162,12 +162,14 @@ export default function RootLayout({
         
         {/* FAQ Schema */}
         <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              mainEntity: [
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      name: "WordGrid - Frequently Asked Questions",    // ← ADDED THIS
+      url: "https://wordgrid.fun",                      // ← ADDED THIS
+      mainEntity: [
                 {
                   "@type": "Question",
                   name: "What is WordGrid?",
