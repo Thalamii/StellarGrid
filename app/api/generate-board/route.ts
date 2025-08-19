@@ -27,6 +27,17 @@ const BOGGLE_DICE = [
   ["P", "A", "C", "E", "M", "D"],
 ]
 
+// Word length requirements
+interface LengthRequirements {
+  [length: number]: number
+}
+
+const DEFAULT_LENGTH_REQUIREMENTS: LengthRequirements = {
+  6: 5,  // At least 5 six-letter words
+  7: 5,  // At least 5 seven-letter words
+  8: 5   // At least 5 eight-letter words
+}
+
 class TrieNode {
   children: Map<string, TrieNode>
   isEndOfWord: boolean
@@ -150,6 +161,40 @@ function shuffleArray<T>(array: T[], seed: number): T[] {
   return shuffled
 }
 
+// Check if word length requirements are met
+function checkLengthRequirements(words: string[], requirements: LengthRequirements): boolean {
+  const lengthCounts: { [length: number]: number } = {}
+  
+  // Count words by length
+  words.forEach(word => {
+    const len = word.length
+    lengthCounts[len] = (lengthCounts[len] || 0) + 1
+  })
+  
+  // Check if all requirements are met
+  for (const [length, required] of Object.entries(requirements)) {
+    const lengthNum = parseInt(length)
+    const count = lengthCounts[lengthNum] || 0
+    if (count < required) {
+      return false
+    }
+  }
+  
+  return true
+}
+
+// Get word distribution by length
+function getWordDistribution(words: string[]): { [length: number]: number } {
+  const distribution: { [length: number]: number } = {}
+  
+  words.forEach(word => {
+    const len = word.length
+    distribution[len] = (distribution[len] || 0) + 1
+  })
+  
+  return distribution
+}
+
 function generateBoard(dateString: string): string[][] {
   const seed = generateDateSeed(dateString)
   const shuffledDice = shuffleArray(BOGGLE_DICE, seed)
@@ -172,14 +217,35 @@ function generateBoard(dateString: string): string[][] {
   return board
 }
 
+// Keep original function for backward compatibility
 function generateBoardWithMinWords(dateString: string, minWords: number = 50): { board: string[][], wordCount: number, attempts: number, allWords: string[] } {
+  const result = generateBoardWithRequirements(dateString, minWords, DEFAULT_LENGTH_REQUIREMENTS)
+  // Return original format without distribution
+  return {
+    board: result.board,
+    wordCount: result.wordCount,
+    attempts: result.attempts,
+    allWords: result.allWords
+  }
+}
+
+function generateBoardWithRequirements(
+  dateString: string, 
+  minWords: number = 50, 
+  lengthRequirements: LengthRequirements = DEFAULT_LENGTH_REQUIREMENTS
+): { board: string[][], wordCount: number, attempts: number, allWords: string[], distribution: { [length: number]: number } } {
   const baseSeed = generateDateSeed(dateString)
   let attempts = 0
-  const maxAttempts = 100 // Prevent infinite loops
+  const maxAttempts = 200 // Balanced for better results without timeout risk
   
   // Build trie once
   const trie = new TrieNode()
   words3.forEach((word) => trie.addWord(word))
+  
+  let bestBoard: string[][] | null = null
+  let bestWords: string[] = []
+  let bestDistribution: { [length: number]: number } = {}
+  let bestScore = 0
   
   while (attempts < maxAttempts) {
     attempts++
@@ -207,48 +273,105 @@ function generateBoardWithMinWords(dateString: string, minWords: number = 50): {
     solver.findAllWords()
     const wordCount = solver.answers.size
     const allWords = Array.from(solver.answers).sort()
+    const distribution = getWordDistribution(allWords)
     
-    if (wordCount >= minWords) {
-      return { board, wordCount, attempts, allWords }
+    // Calculate a score based on how well this board meets our requirements
+    let score = wordCount
+    if (checkLengthRequirements(allWords, lengthRequirements)) {
+      score += 1000 // Big bonus for meeting length requirements
+    } else {
+      // Partial score for getting closer to length requirements
+      for (const [length, required] of Object.entries(lengthRequirements)) {
+        const lengthNum = parseInt(length)
+        const count = distribution[lengthNum] || 0
+        score += Math.min(count, required) * 10
+      }
+    }
+    
+    if (score > bestScore) {
+      bestScore = score
+      bestBoard = board
+      bestWords = allWords
+      bestDistribution = distribution
+    }
+    
+    // Early exit if we found a perfect board
+    if (wordCount >= minWords && checkLengthRequirements(allWords, lengthRequirements)) {
+      return { board, wordCount, attempts, allWords, distribution }
     }
   }
   
-  // Fallback: return the last generated board even if it doesn't meet criteria
-  console.warn(`Could not generate board with ${minWords}+ words after ${maxAttempts} attempts`)
-  const fallbackSeed = baseSeed + maxAttempts
-  const shuffledDice = shuffleArray(BOGGLE_DICE, fallbackSeed)
-  
-  const board: string[][] = Array(4)
-    .fill(null)
-    .map(() => Array(4).fill(""))
-  
-  const fallbackRng = new SeededRandom(fallbackSeed + 1000)
-  for (let i = 0; i < 16; i++) {
-    const die = shuffledDice[i]
-    const faceIndex = fallbackRng.nextInt(6)
-    const letter = die[faceIndex]
-    
-    const row = Math.floor(i / 4)
-    const col = i % 4
-    board[row][col] = letter
+  // Return the best board found, even if it doesn't meet all criteria
+  if (bestBoard) {
+    console.warn(`Best board found after ${maxAttempts} attempts:`, {
+      totalWords: bestWords.length,
+      distribution: bestDistribution,
+      meetsLengthRequirements: checkLengthRequirements(bestWords, lengthRequirements)
+    })
+    return { 
+      board: bestBoard, 
+      wordCount: bestWords.length, 
+      attempts: maxAttempts, 
+      allWords: bestWords,
+      distribution: bestDistribution
+    }
   }
   
-  const solver = new BoardSolver(board, trie)
+  // Ultimate fallback
+  console.error(`Failed to generate any valid board after ${maxAttempts} attempts`)
+  const fallbackBoard = generateBoard(dateString)
+  const solver = new BoardSolver(fallbackBoard, trie)
   solver.findAllWords()
-  const allWords = Array.from(solver.answers).sort()
+  const fallbackWords = Array.from(solver.answers).sort()
   
-  return { board, wordCount: solver.answers.size, attempts, allWords }
+  return { 
+    board: fallbackBoard, 
+    wordCount: solver.answers.size, 
+    attempts: maxAttempts, 
+    allWords: fallbackWords,
+    distribution: getWordDistribution(fallbackWords)
+  }
 }
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get("date") || new Date().toISOString().split("T")[0]
-    const minWords = parseInt(searchParams.get("minWords") || "50") // Allow customization via URL param
+    const minWords = parseInt(searchParams.get("minWords") || "50")
+    
+    // Parse custom length requirements from URL if provided
+    const customRequirements: LengthRequirements = { ...DEFAULT_LENGTH_REQUIREMENTS }
+    const req6 = searchParams.get("req6")
+    const req7 = searchParams.get("req7")
+    const req8 = searchParams.get("req8")
+    
+    if (req6) customRequirements[6] = parseInt(req6)
+    if (req7) customRequirements[7] = parseInt(req7)
+    if (req8) customRequirements[8] = parseInt(req8)
 
-    // Generate board with minimum word count guarantee
-    const { board, wordCount, attempts, allWords } = generateBoardWithMinWords(date, minWords)
+    // Generate board with both minimum word count and length requirements
+    // Use new function but provide fallback for compatibility
+    let result
+    const enableLengthRequirements = searchParams.get("enableLengthReq") === "true"
+    
+    if (enableLengthRequirements) {
+      result = generateBoardWithRequirements(date, minWords, customRequirements)
+    } else {
+      // Use original function for backward compatibility
+      const originalResult = generateBoardWithMinWords(date, minWords)
+      result = {
+        ...originalResult,
+        distribution: getWordDistribution(originalResult.allWords)
+      }
+    }
+    
+    const { board, wordCount, attempts, allWords, distribution } = result
+    
+    const meetsLengthRequirements = enableLengthRequirements ? checkLengthRequirements(allWords, customRequirements) : null
+    
     console.log(`Generated board for ${date} with ${wordCount} words in ${attempts} attempt(s)`)
+    console.log('Word distribution:', distribution)
+    console.log('Meets length requirements:', meetsLengthRequirements)
 
     const allPossibleWords = allWords
     
@@ -257,33 +380,38 @@ export async function GET(request: NextRequest) {
     const bonusWords = allPossibleWords.slice(50)
 
     const response = NextResponse.json({
-  success: true,
-  data: {
-    date,
-    board,
-    possibleWords: allPossibleWords,
-    targetWords: targetWords,
-    bonusWords: bonusWords,
-    totalPossibleWords: Math.min(targetWords.length, 50),
-    totalAllWords: allPossibleWords.length,
-    boardString: board.flat().join(""),
-    generationStats: {
-      attempts,
-      totalWordsFound: wordCount,
-      meetsMinimum: wordCount >= minWords
-    }
-  },
-})
+      success: true,
+      data: {
+        date,
+        board,
+        possibleWords: allPossibleWords,
+        targetWords: targetWords,
+        bonusWords: bonusWords,
+        totalPossibleWords: Math.min(targetWords.length, 50),
+        totalAllWords: allPossibleWords.length,
+        boardString: board.flat().join(""),
+        wordDistribution: distribution,
+        lengthRequirements: customRequirements,
+        meetsLengthRequirements,
+        generationStats: {
+          attempts,
+          totalWordsFound: wordCount,
+          meetsMinimum: wordCount >= minWords,
+          meetsLengthRequirements,
+          distribution
+        }
+      },
+    })
 
-// Add no-cache headers
-response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
-response.headers.set('Pragma', 'no-cache')
-response.headers.set('Expires', '0')
-response.headers.set('Surrogate-Control', 'no-store')
+    // Add no-cache headers
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
 
-return response
+    return response
   } catch (error) {
     console.error("Error generating board:", error)
     return NextResponse.json({ success: false, error: "Failed to generate board" }, { status: 500 })
   }
-}
+    }
