@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { RotateCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LetterGrid } from "./letter-grid"
+import { AdComponent } from "./ad-component"
 import { GameStats } from "./game-stats"
 import { FoundWordsList } from "./found-words-list"
 import { AnimatedScore } from "./animated-score"
@@ -314,7 +315,7 @@ export function WordGridGame() {
         </div>
 
         <FoundWordsList words={gameState.foundWords} />
-        
+        <AdComponent className="neomorphic-large p-4" />
         <DailyStats />
         
         <SEOAccordion />
