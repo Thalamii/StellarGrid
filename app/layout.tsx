@@ -72,14 +72,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-         {/* Google Analytics - Add at the beginning of head for early loading */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-11474675914"></script>
+        {/* Google Analytics - Add at the beginning of head for early loading */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SJ67T9YMT6"></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
+              gtag('config', 'G-SJ67T9YMT6');
               gtag('config', 'AW-11474675914');
             `,
           }}
