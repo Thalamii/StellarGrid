@@ -72,6 +72,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+         {/* Google Analytics - Add at the beginning of head for early loading */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-11474675914"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'AW-11474675914');
+            `,
+          }}
+        />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/Wordgrid.webp" type="image/webp" />
         <link rel="apple-touch-icon" href="/Wordgrid.webp" />
