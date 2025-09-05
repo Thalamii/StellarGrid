@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { words3 } from "@/utils/words3"
+import { obfuscateWords } from "@/utils/wordObfuscation"
 
 // Add these lines after your imports
 export const dynamic = 'force-dynamic'
@@ -373,26 +374,41 @@ export async function GET(request: NextRequest) {
     console.log('Word distribution:', distribution)
     console.log('Meets length requirements:', meetsLengthRequirements)
 
-    const allPossibleWords = allWords
+    // Split words into target and bonus
+    const targetWords = allWords.slice(0, 50)
+    const bonusWords = allWords.slice(50)
     
-    // Take first 50 words as target, rest as bonus
-    const targetWords = allPossibleWords.slice(0, 50)
-    const bonusWords = allPossibleWords.slice(50)
-
+    // Obfuscate word lists to make casual cheating harder
+    const obfuscatedPossibleWords = obfuscateWords(allWords, date)
+    const obfuscatedTargetWords = obfuscateWords(targetWords, date)
+    const obfuscatedBonusWords = obfuscateWords(bonusWords, date)
+    
+    // Debug: Log obfuscation status (remove in production)
+    console.log(`Obfuscation test for ${date}:`, {
+      originalWordCount: allWords.length,
+      obfuscatedLength: obfuscatedPossibleWords.length,
+      isObfuscated: obfuscatedPossibleWords !== JSON.stringify(allWords)
+    })
+    
     const response = NextResponse.json({
       success: true,
       data: {
         date,
         board,
-        possibleWords: allPossibleWords,
-        targetWords: targetWords,
-        bonusWords: bonusWords,
-        totalPossibleWords: Math.min(targetWords.length, 50),
-        totalAllWords: allPossibleWords.length,
+        possibleWords: obfuscatedPossibleWords,
+        targetWords: obfuscatedTargetWords,
+        bonusWords: obfuscatedBonusWords,
+        totalPossibleWords: Math.min(wordCount, 50),
+        totalAllWords: wordCount,
         boardString: board.flat().join(""),
-        wordDistribution: distribution,
-        lengthRequirements: customRequirements,
-        meetsLengthRequirements,
+        // Optional: Provide word count hints
+        wordHints: {
+          totalWords: wordCount,
+          targetWords: targetWords.length,
+          bonusWords: bonusWords.length,
+          distribution: distribution
+        },
+        // Keep generation stats for debugging
         generationStats: {
           attempts,
           totalWordsFound: wordCount,

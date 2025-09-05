@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { motion } from "framer-motion"
 import { RotateCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,24 +9,28 @@ import { AdComponent } from "./ad-component"
 import { GameStats } from "./game-stats"
 import { FoundWordsList } from "./found-words-list"
 import { AnimatedScore } from "./animated-score"
-import { DailyStats } from "./daily-stats"
-import { SEOAccordion } from "./seo-accordion"
 import { InstallPrompt } from "./install-prompt"
-import { useGameState } from "@/hooks/use-game-state"
-import { useDailyStats } from "@/hooks/use-daily-stats"
-
-interface GameState {
-  board: string[][]
-  foundWords: string[]
-  rotationCount: number
-  score: number
-  totalPossibleWords: number
-  completionRate: number
-  possibleWords?: string[]
-}
+import { HintButton } from "./hint-button"
+import { useGameStore } from "@/stores/gameStore"
 
 export function WordGridGame() {
-  const { startSession, completeSession } = useDailyStats()
+  // Zustand store - all state management in one place
+  const {
+    gameState,
+    updateGameState,
+    loading,
+    startSession,
+    completeSession,
+    initializeGame,
+    loadStats,
+    // Hint system
+    currentHint,
+    hintState,
+    getHint,
+    clearHint,
+    initializeHintSystem,
+  } = useGameStore()
+  
   const [selectedPath, setSelectedPath] = useState<Array<{ row: number; col: number }>>([])
   const [currentWord, setCurrentWord] = useState("")
   const [wordValidationStatus, setWordValidationStatus] = useState<"valid" | "invalid" | "duplicate" | null>(null)
@@ -35,26 +39,21 @@ export function WordGridGame() {
   const [lastScoredWord, setLastScoredWord] = useState({ word: "", points: 0, isPuzzleComplete: false, isBonusWord: false, isInvalid: false, isDuplicate: false, message: "" })
   const [puzzleCompleted, setPuzzleCompleted] = useState(false)
 
-  const initialState: GameState = {
-    board: Array(4)
-      .fill(null)
-      .map(() => Array(4).fill("")),
-    foundWords: [],
-    rotationCount: 0,
-    score: 0,
-    totalPossibleWords: 0,
-    completionRate: 0,
-  }
-
-  const { gameState, updateGameState, loading } = useGameState(initialState)
+  // Initialize game and stats on mount
+  useEffect(() => {
+    initializeGame()
+    loadStats()
+  }, [initializeGame, loadStats])
 
   // Start session when game loads and user makes first move
   const handleGameStart = useCallback(() => {
     if (!gameStarted) {
       startSession()
       setGameStarted(true)
+      // Initialize hint system when game starts
+      initializeHintSystem()
     }
-  }, [gameStarted, startSession])
+  }, [gameStarted, startSession, initializeHintSystem])
 
   // Create a Set of possible words for O(1) lookup
   const possibleWordsSet = useMemo(() => {
@@ -68,7 +67,13 @@ export function WordGridGame() {
     (path: Array<{ row: number; col: number }>) => {
       handleGameStart() // Start tracking when user starts playing
       setSelectedPath(path)
-      setWordValidationStatus(null)
+      
+      // Only reset validation status when starting a NEW word (path length 1)
+      // Don't reset when path is completely cleared (length 0) - let timeouts handle it
+      if (path.length === 1) {
+        console.log('🔄 handlePathChange: Starting new word, resetting validation to NULL')
+        setWordValidationStatus(null)
+      }
 
       if (gameState && path.length > 0) {
         const rotatedBoard = getRotatedBoard(gameState.board, gameState.rotationCount)
@@ -97,11 +102,17 @@ export function WordGridGame() {
           isBonusWord: false,
           isInvalid: true,
           isDuplicate: false,
-          message: "Too short! Words must be at least 4 letters long"
+          message: "Too Short"
         })
         setShowAnimatedScore(true)
         setCurrentWord("")
-        setSelectedPath([])
+        
+        // Delay clearing everything to allow validation colors to show
+        setTimeout(() => {
+          setSelectedPath([])
+          setWordValidationStatus(null)
+          setShowAnimatedScore(false) // Clear animated score at same time as validation colors
+        }, 1000)
         return
       }
 
@@ -115,17 +126,25 @@ export function WordGridGame() {
           isBonusWord: false,
           isInvalid: false,
           isDuplicate: true,
-          message: `Already found "${upperWord}"!`
+          message: "Already Found"
         })
         setShowAnimatedScore(true)
         setCurrentWord("")
-        setSelectedPath([])
+        
+        // Delay clearing everything to allow validation colors to show
+        setTimeout(() => {
+          setSelectedPath([])
+          setWordValidationStatus(null)
+          setShowAnimatedScore(false) // Clear animated score at same time as validation colors
+        }, 1000)
         return
       }
 
       // Check if word exists in our possible answers
       if (possibleWordsSet.has(upperWord)) {
+        console.log('🟢 VALID WORD FOUND:', upperWord, 'Setting status to VALID')
         setWordValidationStatus("valid")
+        console.log('🟢 Validation status set, current selectedPath length:', selectedPath.length)
         const newFoundWords = [...gameState.foundWords, upperWord]
         const newScore = gameState.score + calculateWordScore(word.length)
         
@@ -148,6 +167,11 @@ export function WordGridGame() {
           score: newScore,
           completionRate: newCompletionRate,
         })
+        
+        // Clear current hint if it was for this word
+        if (currentHint && currentHint.word === upperWord) {
+          clearHint()
+        }
 
         // Show animated score
         let message = ""
@@ -169,6 +193,13 @@ export function WordGridGame() {
           message
         })
         setShowAnimatedScore(true)
+        
+        // Delay clearing everything to allow green validation colors to show
+        setTimeout(() => {
+          setSelectedPath([])
+          setWordValidationStatus(null)
+          setShowAnimatedScore(false) // Clear animated score at same time as validation colors
+        }, 1000)
 
         // Complete session if puzzle is finished (only first time)
         if (isPuzzleComplete) {
@@ -183,13 +214,18 @@ export function WordGridGame() {
           isBonusWord: false,
           isInvalid: true,
           isDuplicate: false,
-          message: `"${upperWord}" is not a valid word`
+          message: "Not A Valid Word"
         })
         setShowAnimatedScore(true)
+        setCurrentWord("")
+        
+        // Delay clearing everything to allow validation colors to show
+        setTimeout(() => {
+          setSelectedPath([])
+          setWordValidationStatus(null)
+          setShowAnimatedScore(false) // Clear animated score at same time as validation colors
+        }, 1000)
       }
-
-      setCurrentWord("")
-      setSelectedPath([])
     },
     [gameState, possibleWordsSet, updateGameState, completeSession],
   )
@@ -299,25 +335,25 @@ export function WordGridGame() {
           onWordComplete={handleWordComplete}
           rotation={0}
           wordValidationStatus={wordValidationStatus}
+          hintPositions={currentHint?.hintPositions || []}
         />
 
-        {/* Action Buttons Only */}
-        <div className="flex gap-3 justify-center">
+        {/* Action Buttons */}
+        <div className="flex gap-3 justify-center items-start relative overflow-visible px-4">
           <Button
             onClick={handleRotate}
             variant="outline"
             size="lg"
-            className="neomorphic-small bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-0 text-blue-700"
+            className="neomorphic-small border-0 text-blue-700 dark:text-blue-300"
           >
             <RotateCw className="w-5 h-5 mr-2" />
             Rotate
           </Button>
+          
+          <HintButton />
         </div>
 
         <FoundWordsList words={gameState.foundWords} />
-        <DailyStats />
-        
-        <SEOAccordion />
       </div>
       
       <AnimatedScore

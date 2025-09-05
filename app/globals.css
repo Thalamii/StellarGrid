@@ -27,25 +27,25 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 216 27% 18%;
+    --foreground: 213 31% 91%;
+    --card: 216 27% 18%;
+    --card-foreground: 213 31% 91%;
+    --popover: 216 27% 18%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 216 27% 18%;
+    --secondary: 214 32% 25%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 214 32% 25%;
+    --muted-foreground: 217 10% 64%;
+    --accent: 214 32% 25%;
+    --accent-foreground: 213 31% 91%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 213 31% 91%;
+    --border: 214 32% 25%;
+    --input: 214 32% 25%;
+    --ring: 217 91% 60%;
   }
 }
 
@@ -92,32 +92,37 @@
 /* Dark Mode Neumorphic Shadows - Enhanced */
 .dark .neomorphic {
   border-radius: 20px;
-  background: #242424;
-  box-shadow: 7px 7px 21px #181818, -7px -7px 21px #303030;
+  background: linear-gradient(145deg, #2a2d3a, #1f2937);
+  box-shadow: 8px 8px 24px rgba(0, 0, 0, 0.4), -8px -8px 24px rgba(79, 88, 120, 0.15);
+  border: 1px solid rgba(79, 88, 120, 0.1);
 }
 
 .dark .neomorphic-inset {
   border-radius: 20px;
-  background: #242424;
-  box-shadow: inset 7px 7px 21px #181818, inset -7px -7px 21px #303030;
+  background: linear-gradient(145deg, #1f2937, #2a2d3a);
+  box-shadow: inset 8px 8px 24px rgba(0, 0, 0, 0.3), inset -8px -8px 24px rgba(79, 88, 120, 0.1);
+  border: 1px solid rgba(79, 88, 120, 0.1);
 }
 
 .dark .neomorphic-small {
-  border-radius: 20px;
-  background: linear-gradient(145deg, #272727, #202020);
-  box-shadow: 7px 7px 21px #181818, -7px -7px 21px #303030;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #374151, #2d3748);
+  box-shadow: 6px 6px 18px rgba(0, 0, 0, 0.35), -6px -6px 18px rgba(79, 88, 120, 0.12);
+  border: 1px solid rgba(79, 88, 120, 0.15);
 }
 
 .dark .neomorphic-large {
-  border-radius: 20px;
-  background: linear-gradient(145deg, #202020, #272727);
-  box-shadow: 7px 7px 21px #181818, -7px -7px 21px #303030;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #2d3748, #374151);
+  box-shadow: 12px 12px 32px rgba(0, 0, 0, 0.45), -12px -12px 32px rgba(79, 88, 120, 0.18);
+  border: 1px solid rgba(79, 88, 120, 0.12);
 }
 
 .dark .neomorphic-pressed {
   border-radius: 20px;
-  background: #242424;
-  box-shadow: inset 7px 7px 21px #181818, inset -7px -7px 21px #303030;
+  background: linear-gradient(145deg, #1f2937, #2a2d3a);
+  box-shadow: inset 10px 10px 28px rgba(0, 0, 0, 0.4), inset -10px -10px 28px rgba(79, 88, 120, 0.1);
+  border: 1px solid rgba(79, 88, 120, 0.08);
 }
 
 /* Custom scrollbar - Light Mode */
@@ -151,6 +156,53 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #5a5d6a;
 }
+
+/* Dark Mode Text and UI Enhancements */
+.dark {
+  color-scheme: dark;
+}
+
+/* Better text contrast in dark mode */
+.dark .text-gray-700 {
+  color: rgb(203, 213, 225) !important;
+}
+
+.dark .text-gray-800 {
+  color: rgb(226, 232, 240) !important;
+}
+
+.dark .text-gray-600 {
+  color: rgb(148, 163, 184) !important;
+}
+
+
+/* Better button colors in dark mode */
+.dark .bg-gradient-to-br.from-gray-100.to-gray-200 {
+  background: linear-gradient(145deg, #475569, #64748b) !important;
+  color: rgb(226, 232, 240) !important;
+}
+
+.dark .hover\:from-gray-200:hover {
+  background: linear-gradient(145deg, #64748b, #94a3b8) !important;
+}
+
+/* Dark mode stats and UI elements */
+.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark .bg-green-100 {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+.dark .text-blue-700 {
+  color: rgb(147, 197, 253) !important;
+}
+
+.dark .text-green-700 {
+  color: rgb(134, 239, 172) !important;
+}
+
 
 /* Touch feedback */
 .touch-feedback {

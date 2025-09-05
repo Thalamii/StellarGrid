@@ -3,10 +3,12 @@ import { GameHeader } from "@/components/game-header"
 
 export default function Home() {
   return (
-    <main className="min-h-screen p-4 bg-[#d4dde4] dark:bg-[#242424]">
-      <div className="max-w-md mx-auto space-y-6">
+    <main className="min-h-screen bg-[#d4dde4] dark:bg-[#2d3748]">
+      <div className="max-w-md mx-auto">
         <GameHeader />
-        <WordGridGame />
+        <div className="p-4">
+          <WordGridGame />
+        </div>
       </div>
     </main>
   )

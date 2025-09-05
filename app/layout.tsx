@@ -2,8 +2,10 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { AuthProvider } from "@/components/auth-provider"
+import { AuthSync } from "@/components/auth-sync"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
+import { Toaster } from "react-hot-toast"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -182,7 +184,24 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <AuthSync />
             <main className="min-h-screen bg-background">{children}</main>
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+                success: {
+                  duration: 2000,
+                },
+                error: {
+                  duration: 4000,
+                },
+              }}
+            />
           </AuthProvider>
         </ThemeProvider>
       </body>

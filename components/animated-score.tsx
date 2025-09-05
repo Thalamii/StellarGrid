@@ -31,11 +31,10 @@ export function AnimatedScore({
   useEffect(() => {
     if (show) {
       setMounted(true)
-      const timer = setTimeout(() => {
-        onComplete()
-        setMounted(false)
-      }, isPuzzleComplete ? 450 : (isInvalid || isDuplicate) ? 350 : 400) // Under 0.5s
-      return () => clearTimeout(timer)
+    } else {
+      // When show becomes false, immediately hide and call onComplete
+      setMounted(false)
+      onComplete()
     }
   }, [show, onComplete])
 
@@ -47,6 +46,7 @@ export function AnimatedScore({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ exit: { duration: 0 } }} // Instant exit to match validation colors
         >
           <motion.div
             className={`text-white px-6 py-3 rounded-full shadow-lg ${
@@ -58,41 +58,42 @@ export function AnimatedScore({
                     ? "bg-gradient-to-r from-orange-400 via-yellow-500 to-amber-500"
                     : "bg-gradient-to-r from-green-400 to-blue-500"
             }`}
-            initial={{ scale: 0, y: 20 }}
+            initial={{ scale: isPuzzleComplete ? 0 : 0.8, y: isPuzzleComplete ? 20 : 10, opacity: 0 }}
             animate={{ 
-              scale: isPuzzleComplete ? [0, 1.2, 1] : (isInvalid || isDuplicate) ? [0, 1.05, 1] : [0, 1.1, 1],
-              y: [20, 0, -5],
-              rotateX: (isInvalid || isDuplicate) ? [0, -5, 5, 0] : [0, 180, 0]
+              scale: isPuzzleComplete ? [0, 1.2, 1] : 1, // Gentle scale for regular words
+              y: isPuzzleComplete ? [20, 0, -5] : 0, // Subtle upward movement for regular words
+              opacity: 1,
+              rotateX: isPuzzleComplete ? [0, 180, 0] : 0 // No rotation for regular words
             }}
-            exit={{ scale: 0, opacity: 0 }}
+            exit={{ scale: 0.8, opacity: 0, transition: { duration: 0.2 } }} // Quick exit
             transition={{ 
-              duration: isPuzzleComplete ? 0.4 : (isInvalid || isDuplicate) ? 0.35 : 0.4,
+              duration: isPuzzleComplete ? 0.8 : 0.3, // Smooth entrance for regular words
               ease: "easeOut"
             }}
           >
             <div className="text-center">
-              <div className={`font-bold ${
-                isPuzzleComplete ? "text-3xl" : "text-2xl"
+              {!(isInvalid || isDuplicate) && (
+                <div className={`font-bold ${
+                  isPuzzleComplete ? "text-3xl" : "text-2xl"
+                }`}>
+                  {isPuzzleComplete ? "🎉 Puzzle Complete! 🎉" : `+${points} points!`}
+                </div>
+              )}
+              <div className={`${
+                isInvalid || isDuplicate ? "text-sm font-medium" : "text-sm opacity-90"
               }`}>
-                {isPuzzleComplete ? "🎉 Puzzle Complete! 🎉" : 
-                 isInvalid || isDuplicate ? "❌" : 
-                 `+${points} points!`}
-              </div>
-              <div className="text-sm opacity-90">
-                {message || word}
+                {isInvalid || isDuplicate ? message : (message || word)}
               </div>
             </div>
           </motion.div>
 
-          {/* Fast Confetti effect - only for valid words */}
-          {!(isInvalid || isDuplicate) &&
-            Array.from({ length: isPuzzleComplete ? 50 : 12 }).map((_, i) => {
-              const colors = isPuzzleComplete
-                ? ["bg-red-400", "bg-blue-400", "bg-green-400", "bg-yellow-400", "bg-purple-400", "bg-pink-400"]
-                : ["bg-yellow-400"]
+          {/* Fast Confetti effect - only for puzzle complete */}
+          {isPuzzleComplete &&
+            Array.from({ length: 50 }).map((_, i) => {
+              const colors = ["bg-red-400", "bg-blue-400", "bg-green-400", "bg-yellow-400", "bg-purple-400", "bg-pink-400"]
               const color = colors[i % colors.length]
-              const radius = isPuzzleComplete ? 150 + (i % 3) * 50 : 100
-              const delay = isPuzzleComplete ? (i * 0.005) : 0.05 // faster start
+              const radius = 150 + (i % 3) * 50
+              const delay = i * 0.005 // faster start
 
               return (
                 <motion.div
@@ -100,13 +101,13 @@ export function AnimatedScore({
                   className={`absolute w-3 h-3 ${color} rounded-full`}
                   initial={{ x: 0, y: 0, scale: 0 }}
                   animate={{
-                    x: Math.cos(i * (360 / (isPuzzleComplete ? 50 : 12)) * Math.PI / 180) * radius,
-                    y: Math.sin(i * (360 / (isPuzzleComplete ? 50 : 12)) * Math.PI / 180) * radius,
+                    x: Math.cos(i * (360 / 50) * Math.PI / 180) * radius,
+                    y: Math.sin(i * (360 / 50) * Math.PI / 180) * radius,
                     scale: [0, 1, 0],
                     rotate: 360
                   }}
                   transition={{
-                    duration: 0.4, // matches popup clear-out
+                    duration: 0.8, // matches main animation duration
                     delay: delay,
                     ease: "easeOut"
                   }}

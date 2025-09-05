@@ -33,7 +33,7 @@ export function GameStats({ score, wordsFound, totalWords, completionRate }: Gam
     <div className="grid grid-cols-3 gap-4">
       {/* Score */}
       <motion.div
-        className="neomorphic-small p-4 bg-gradient-to-br from-yellow-50 to-yellow-100"
+        className="neomorphic-small p-4"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.2 }}
       >
@@ -48,7 +48,7 @@ export function GameStats({ score, wordsFound, totalWords, completionRate }: Gam
 
       {/* Words Found */}
       <motion.div
-        className="neomorphic-small p-4 bg-gradient-to-br from-blue-50 to-blue-100"
+        className="neomorphic-small p-4"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.2 }}
       >
@@ -65,7 +65,7 @@ export function GameStats({ score, wordsFound, totalWords, completionRate }: Gam
 
       {/* Completion Rate */}
       <motion.div
-        className="neomorphic-small p-4 bg-gradient-to-br from-green-50 to-green-100"
+        className="neomorphic-small p-4"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.2 }}
       >

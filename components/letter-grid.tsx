@@ -12,6 +12,7 @@ interface LetterGridProps {
   onWordComplete: (word: string) => void
   rotation: number
   wordValidationStatus?: "valid" | "invalid" | "duplicate" | null
+  hintPositions?: Array<{ row: number; col: number }>
   gameState?: {
     possibleWords?: string[]
     foundWords: string[]
@@ -25,6 +26,7 @@ export function LetterGrid({
   onWordComplete,
   rotation,
   wordValidationStatus,
+  hintPositions = [],
 }: LetterGridProps) {
   // Core state - simplified state machine approach
   const [isDragging, setIsDragging] = useState(false)
@@ -61,6 +63,23 @@ export function LetterGrid({
     currentPathRef.current = currentPath
   }, [currentPath])
 
+  // Sync internal path with parent selectedPath
+  // But preserve path during validation period to show colors
+  useEffect(() => {
+    if (selectedPath.length > 0) {
+      // Always sync when there's an active path
+      setCurrentPath(selectedPath)
+    } else if (selectedPath.length === 0 && !wordValidationStatus) {
+      // Only clear path when no validation status is active
+      console.log('📝 Clearing path because selectedPath is empty and no validation status')
+      setCurrentPath([])
+      setTrailPositions([])
+    } else if (selectedPath.length === 0 && wordValidationStatus) {
+      // Keep current path during validation period even if selectedPath is cleared
+      console.log('⏳ Preserving path during validation:', wordValidationStatus, 'currentPath:', currentPath.length)
+    }
+  }, [selectedPath, wordValidationStatus])
+
   // Utility functions needed by handleMouseEnter
   const isAdjacent = (pos1: { row: number; col: number }, pos2: { row: number; col: number }): boolean => {
     const rowDiff = Math.abs(pos1.row - pos2.row)
@@ -71,6 +90,19 @@ export function LetterGrid({
   const isPositionInPath = (row: number, col: number): boolean => {
     return currentPath.some((pos) => pos.row === row && pos.col === col)
   }
+  
+  const isPositionInHint = (row: number, col: number): boolean => {
+    return hintPositions.some((pos) => pos.row === row && pos.col === col)
+  }
+  
+  const getHintPositionIndex = (row: number, col: number): number => {
+    return hintPositions.findIndex((pos) => pos.row === row && pos.col === col)
+  }
+  
+  const isPositionInDisplayPath = (row: number, col: number, displayPath: Array<{ row: number; col: number }>): boolean => {
+    return displayPath.some((pos) => pos.row === row && pos.col === col)
+  }
+  
 
   const getPositionInPath = (row: number, col: number): number => {
     return currentPath.findIndex((pos) => pos.row === row && pos.col === col)
@@ -189,6 +221,7 @@ export function LetterGrid({
     })
   }, [currentPath, updateTrailPositions])
 
+
   // Responsive updates
   useEffect(() => {
     if (!gridRef.current) return
@@ -261,12 +294,8 @@ export function LetterGrid({
     setIsDragging(false)
     lastPositionRef.current = null // Reset tracking
     
-    // Keep trail and highlights visible longer to show validation colors
-    setTimeout(() => {
-      setCurrentPath([])
-      setTrailPositions([])
-      onPathChange([])
-    }, 1500) // Increased from 1000ms to 1500ms to see colors better
+    // Don't automatically clear path here - let the parent component control timing
+    // to preserve validation colors
   }, [isDragging, currentPath, board, onWordComplete, onPathChange, isCompleting])
 
   // Optimized global event handling with throttling
@@ -307,6 +336,7 @@ export function LetterGrid({
 
 
   const getSelectionColor = () => {
+    console.log('🎨 LetterGrid getSelectionColor called, validation status:', wordValidationStatus, 'currentPath length:', currentPath.length)
     if (wordValidationStatus === "valid")
       return {
         bg: "from-green-400 to-green-600",
@@ -336,14 +366,14 @@ export function LetterGrid({
     }
   }
 
-  const generateConnections = () => {
-    if (currentPath.length < 2) return []
+  const generateConnections = (path: Array<{ row: number; col: number }>) => {
+    if (path.length < 2) return []
     
     const connections = []
     
-    for (let i = 0; i < currentPath.length - 1; i++) {
-      const current = currentPath[i]
-      const next = currentPath[i + 1]
+    for (let i = 0; i < path.length - 1; i++) {
+      const current = path[i]
+      const next = path[i + 1]
       
       // Calculate connection position and dimensions
       const currentButton = gridRef.current?.querySelector(`[data-row="${current.row}"][data-col="${current.col}"]`) as HTMLElement
@@ -426,7 +456,7 @@ export function LetterGrid({
   return (
     <motion.div
       ref={gridRef}
-      className="neomorphic-large p-6 bg-gradient-to-br from-gray-50 to-gray-100 relative"
+      className="neomorphic-large p-6 relative"
       animate={{
         x: wordValidationStatus === "invalid" ? [0, -10, 10, -10, 10, 0] : 0
       }}
@@ -464,7 +494,7 @@ export function LetterGrid({
       ))}
 
       {/* Rectangular Trail Connections */}
-      {currentPath.length > 1 && generateConnections().map((connection) => (
+      {currentPath.length > 1 && generateConnections(currentPath).map((connection) => (
         <div
           key={connection.key}
           className="absolute pointer-events-none"
@@ -489,6 +519,10 @@ export function LetterGrid({
             const isSelected = isPositionInPath(rowIndex, colIndex)
             const positionInPath = getPositionInPath(rowIndex, colIndex)
             const isLastSelected = isSelected && positionInPath === currentPath.length - 1
+            
+            // Hint highlighting
+            const isHintPosition = isPositionInHint(rowIndex, colIndex)
+            const hintIndex = getHintPositionIndex(rowIndex, colIndex)
 
             return (
               <motion.button
@@ -498,14 +532,14 @@ export function LetterGrid({
                 className={`
                   relative aspect-square rounded-xl font-bold text-2xl sm:text-3xl
                   transition-all duration-150 select-none touch-manipulation
-                  min-h-[44px] min-w-[44px] sm:min-h-[56px] sm:min-w-[56px] md:min-h-[70px] md:min-w-[70px]
-                  active:scale-95 will-change-transform
                   ${
                     isSelected
                       ? isLastSelected
                         ? `bg-gradient-to-br ${colors.bg} text-white shadow-lg scale-105 ring-2 ring-white/30` 
                         : `bg-gradient-to-br ${colors.bg} text-white shadow-lg scale-105 opacity-80` 
-                      : "neomorphic-small bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 md:hover:scale-102"
+                      : isHintPosition
+                        ? "neomorphic-small bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-lg ring-2 ring-blue-300/50"
+                        : "neomorphic-small text-gray-700 dark:text-gray-300 md:hover:scale-102"
                   }
                   ${isLastSelected ? `ring-4 ${colors.ring} ring-opacity-60` : ""}
                 `}
@@ -529,6 +563,16 @@ export function LetterGrid({
                     transition={{ duration: 0.2 }}
                   >
                     {positionInPath + 1}
+                  </motion.div>
+                )}
+                {isHintPosition && !isSelected && (
+                  <motion.div
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.2, delay: hintIndex * 0.1 }}
+                  >
+                    {hintIndex + 1}
                   </motion.div>
                 )}
               </motion.button>
