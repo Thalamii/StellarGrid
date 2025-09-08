@@ -2,6 +2,9 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "lucide-react"
+import { PreviousDayPopup } from "./previous-day-popup"
 
 interface FoundWordsListProps {
   words: string[]
@@ -31,9 +34,22 @@ export function FoundWordsList({ words }: FoundWordsListProps) {
 
   return (
     <div className="neomorphic-large p-6 bg-gradient-to-br from-gray-50 to-gray-100">
-      <h3 className="text-lg font-semibold text-gray-700 mb-4 text-center">Found Words ({words.length})</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-700">Found Words ({words.length})</h3>
+        <PreviousDayPopup>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="neomorphic-small border-0 text-blue-700 dark:text-blue-300 h-8 px-3"
+          >
+            <Calendar className="w-4 h-4 mr-1" />
+            <span className="hidden sm:inline">Previous Day</span>
+            <span className="sm:hidden">Prev</span>
+          </Button>
+        </PreviousDayPopup>
+      </div>
       <ScrollArea className="h-48">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-4">
           <AnimatePresence>
             {words.map((word, index) => (
               <motion.div

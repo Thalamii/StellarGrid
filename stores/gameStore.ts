@@ -4,6 +4,7 @@ import { saveGameProgress, loadGameProgress, createOrUpdateUserProfile } from '@
 import { deobfuscateWords } from '@/utils/wordObfuscation'
 import { HintSystem, HintStateManager, PathHint, HintState } from '@/utils/hintSystem'
 import { WordPathFinder } from '@/utils/wordPathFinder'
+import { soundManager } from '@/utils/soundManager'
 
 // Types
 interface GameState {
@@ -62,6 +63,10 @@ interface GameStore {
   // User context
   user: any // From auth
   
+  // Sound Settings
+  soundEnabled: boolean
+  soundVolume: number
+  
   // Hint System
   hintSystem: HintSystem | null
   currentHint: PathHint | null
@@ -78,6 +83,10 @@ interface GameStore {
   startSession: () => void
   completeSession: (finalScore: number, wordsFound: number, targetWords: number) => void
   refreshStats: () => void
+  
+  // Sound actions
+  toggleSound: () => void
+  setSoundVolume: (volume: number) => void
   
   // Hint actions
   getHint: () => void
@@ -164,6 +173,10 @@ export const useGameStore = create<GameStore>()(subscribeWithSelector((set, get)
   statsLoading: false,
   
   user: null,
+  
+  // Sound Settings
+  soundEnabled: true,
+  soundVolume: 0.7,
   
   // Hint System
   hintSystem: null,
@@ -433,6 +446,22 @@ export const useGameStore = create<GameStore>()(subscribeWithSelector((set, get)
     get().loadStats()
   },
   
+  // Utility function to get rotated board
+  getRotatedBoard: (board: string[][], rotations: number): string[][] => {
+    let rotatedBoard = board
+    for (let i = 0; i < rotations; i++) {
+      const n = rotatedBoard.length
+      const rotated: string[][] = Array(n).fill(null).map(() => Array(n).fill(""))
+      for (let row = 0; row < n; row++) {
+        for (let col = 0; col < n; col++) {
+          rotated[col][n - 1 - row] = rotatedBoard[row][col]
+        }
+      }
+      rotatedBoard = rotated
+    }
+    return rotatedBoard
+  },
+
   // Hint System Actions
   initializeHintSystem: () => {
     const { gameState, dailyBoard } = get()
@@ -443,15 +472,18 @@ export const useGameStore = create<GameStore>()(subscribeWithSelector((set, get)
     }
     
     try {
-      // Find paths for all words
-      const pathFinder = new WordPathFinder(gameState.board, gameState.possibleWords)
+      // Use the ROTATED board for hint system to match what user sees
+      const rotatedBoard = get().getRotatedBoard(gameState.board, gameState.rotationCount)
+      
+      // Find paths for all words on the rotated board
+      const pathFinder = new WordPathFinder(rotatedBoard, gameState.possibleWords)
       const wordPaths = pathFinder.getAllWordPaths()
       
-      // Initialize hint system
+      // Initialize hint system with rotated board
       const hintSystem = new HintSystem(
         gameState.possibleWords,
         gameState.foundWords,
-        gameState.board,
+        rotatedBoard,
         wordPaths
       )
       
@@ -460,7 +492,7 @@ export const useGameStore = create<GameStore>()(subscribeWithSelector((set, get)
         hintState: HintStateManager.getHintState()
       })
       
-      console.log(`💡 Hint system initialized with ${wordPaths.size} word paths`)
+      console.log(`💡 Hint system initialized with ${wordPaths.size} word paths (rotation: ${gameState.rotationCount})`)
     } catch (error) {
       console.error('Error initializing hint system:', error)
     }
@@ -481,19 +513,22 @@ export const useGameStore = create<GameStore>()(subscribeWithSelector((set, get)
     }
     
     try {
-      // Reinitialize hint system with current found words
+      // Reinitialize hint system with current found words AND current rotation
       if (!gameState.possibleWords) {
         console.warn('No possible words available')
         return
       }
       
-      const pathFinder = new WordPathFinder(gameState.board, gameState.possibleWords)
+      // CRITICAL FIX: Use the ROTATED board to match what the user sees
+      const rotatedBoard = get().getRotatedBoard(gameState.board, gameState.rotationCount)
+      
+      const pathFinder = new WordPathFinder(rotatedBoard, gameState.possibleWords)
       const wordPaths = pathFinder.getAllWordPaths()
       
       const updatedHintSystem = new HintSystem(
         gameState.possibleWords,
         gameState.foundWords,
-        gameState.board,
+        rotatedBoard, // Use rotated board here!
         wordPaths
       )
       
@@ -508,21 +543,24 @@ export const useGameStore = create<GameStore>()(subscribeWithSelector((set, get)
       // Use the hint
       const newHintState = HintStateManager.useHint(hint.word)
       
+      // Play hint activation sound
+      soundManager.playHintActivate()
+      
       set({ 
         currentHint: hint,
         hintState: newHintState,
         hintSystem: updatedHintSystem
       })
       
-      console.log('💡 Hint provided:', hint.message)
+      console.log('💡 Hint provided:', hint.message, 'for rotation:', gameState.rotationCount)
       
-      // Auto-clear hint after 3 seconds
+      // Auto-clear hint after 6 seconds (increased from 3)
       setTimeout(() => {
         const currentState = get()
         if (currentState.currentHint?.id === hint.id) {
           get().clearHint()
         }
-      }, 3000)
+      }, 6000)
       
     } catch (error) {
       console.error('Error getting hint:', error)
@@ -531,12 +569,62 @@ export const useGameStore = create<GameStore>()(subscribeWithSelector((set, get)
   
   clearHint: () => {
     set({ currentHint: null })
+  },
+  
+  // Sound Actions
+  toggleSound: () => {
+    const { soundEnabled } = get()
+    const newEnabled = !soundEnabled
+    set({ soundEnabled: newEnabled })
+    soundManager.setEnabled(newEnabled)
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wordgrid_sound_enabled', JSON.stringify(newEnabled))
+    }
+    
+    // Play a test sound when enabling
+    if (newEnabled) {
+      soundManager.testSound()
+    }
+  },
+  
+  setSoundVolume: (volume: number) => {
+    const clampedVolume = Math.max(0, Math.min(1, volume))
+    set({ soundVolume: clampedVolume })
+    soundManager.setVolume(clampedVolume)
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wordgrid_sound_volume', JSON.stringify(clampedVolume))
+    }
   }
 })))
 
 // Initialize stats and game when store is created
 if (typeof window !== 'undefined') {
   const store = useGameStore.getState()
+  
+  // Load sound settings from localStorage
+  try {
+    const savedSoundEnabled = localStorage.getItem('wordgrid_sound_enabled')
+    const savedSoundVolume = localStorage.getItem('wordgrid_sound_volume')
+    
+    if (savedSoundEnabled !== null) {
+      const enabled = JSON.parse(savedSoundEnabled)
+      store.soundEnabled = enabled
+      soundManager.setEnabled(enabled)
+    }
+    
+    if (savedSoundVolume !== null) {
+      const volume = JSON.parse(savedSoundVolume)
+      store.soundVolume = volume
+      soundManager.setVolume(volume)
+    }
+  } catch (error) {
+    console.warn('Error loading sound settings:', error)
+  }
+  
   store.loadStats()
   store.initializeGame()
 }

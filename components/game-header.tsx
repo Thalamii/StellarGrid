@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { AuthDialog } from "@/components/auth-dialog"
 import { GameInstructions } from "@/components/game-instructions"
 import { DailyStats } from "@/components/daily-stats"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { SettingsPopup } from "@/components/settings-popup"
 import { useState } from "react"
 import Image from "next/image"
 
@@ -52,7 +52,7 @@ export function GameHeader() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.4 }}
           >
-            <ThemeToggle />
+            <SettingsPopup />
             
             {/* How to Play Popup */}
             <Dialog>

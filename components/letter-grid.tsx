@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react"
 import { motion } from "framer-motion"
+import { soundManager } from "@/utils/soundManager"
 
 interface LetterGridProps {
   board: string[][]
@@ -129,6 +130,9 @@ export function LetterGrid({
 
       // Check if the new position is adjacent to the last position
       if (lastPosition && isAdjacent(lastPosition, { row, col })) {
+        // Play letter selection sound for new letters
+        soundManager.playLetterSelect()
+        
         // Always allow new adjacent moves - this removes the restrictive direction locking
         const newPath = [...currentPath, { row, col }]
         setCurrentPath(newPath)
@@ -240,6 +244,9 @@ export function LetterGrid({
     (row: number, col: number) => {
       // Force recache button positions to ensure accuracy
       cacheButtonRects()
+      
+      // Play letter selection sound
+      soundManager.playLetterSelect()
       
       setIsDragging(true)
       const newPath = [{ row, col }]

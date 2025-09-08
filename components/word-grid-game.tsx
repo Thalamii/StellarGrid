@@ -12,6 +12,7 @@ import { AnimatedScore } from "./animated-score"
 import { InstallPrompt } from "./install-prompt"
 import { HintButton } from "./hint-button"
 import { useGameStore } from "@/stores/gameStore"
+import { soundManager } from "@/utils/soundManager"
 
 export function WordGridGame() {
   // Zustand store - all state management in one place
@@ -95,6 +96,7 @@ export function WordGridGame() {
       // Check if word is too short
       if (word.length < 4) {
         setWordValidationStatus("invalid")
+        soundManager.playWordInvalid() // 🔊 Play error sound for too short
         setLastScoredWord({
           word: upperWord,
           points: 0,
@@ -119,6 +121,7 @@ export function WordGridGame() {
       // Check if already found
       if (gameState.foundWords.includes(upperWord)) {
         setWordValidationStatus("duplicate")
+        soundManager.playWordInvalid() // 🔊 Play same error sound for duplicate
         setLastScoredWord({
           word: upperWord,
           points: 0,
@@ -144,6 +147,7 @@ export function WordGridGame() {
       if (possibleWordsSet.has(upperWord)) {
         console.log('🟢 VALID WORD FOUND:', upperWord, 'Setting status to VALID')
         setWordValidationStatus("valid")
+        soundManager.playWordValid() // 🔊 Play success sound
         console.log('🟢 Validation status set, current selectedPath length:', selectedPath.length)
         const newFoundWords = [...gameState.foundWords, upperWord]
         const newScore = gameState.score + calculateWordScore(word.length)
@@ -204,9 +208,12 @@ export function WordGridGame() {
         // Complete session if puzzle is finished (only first time)
         if (isPuzzleComplete) {
           completeSession(newScore, newFoundWords.length, gameState.totalPossibleWords)
+          // Play special completion sound after a delay
+          setTimeout(() => soundManager.playPuzzleComplete(), 500)
         }
       } else {
         setWordValidationStatus("invalid")
+        soundManager.playWordInvalid() // 🔊 Play error sound
         setLastScoredWord({
           word: upperWord,
           points: 0,
@@ -235,6 +242,9 @@ export function WordGridGame() {
 
     const newRotationCount = (gameState.rotationCount + 1) % 4
 
+    // Play rotation sound
+    soundManager.playBoardRotate()
+
     updateGameState({
       rotationCount: newRotationCount,
     })
@@ -242,7 +252,16 @@ export function WordGridGame() {
     setSelectedPath([])
     setCurrentWord("")
     setWordValidationStatus(null)
-  }, [gameState, updateGameState])
+    
+    // Clear any current hint since board rotation changes positions
+    clearHint()
+    
+    // Reinitialize hint system with new rotation
+    // We delay this slightly to ensure the state update has processed
+    setTimeout(() => {
+      initializeHintSystem()
+    }, 100)
+  }, [gameState, updateGameState, clearHint, initializeHintSystem])
 
 
   const calculateWordScore = (length: number): number => {
@@ -288,7 +307,7 @@ export function WordGridGame() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-3">
         <GameStats
           score={gameState.score}
           wordsFound={gameState.foundWords.length}
