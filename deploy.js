@@ -14,6 +14,9 @@ fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
 
 console.log(`Version updated to ${packageJson.version}`);
 
+// Update environment variable for build
+process.env.npm_package_version = packageJson.version;
+
 // Build the project
 console.log('Building project...');
 execSync('npm run build', { stdio: 'inherit' });

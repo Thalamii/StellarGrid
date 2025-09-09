@@ -1,10 +1,15 @@
-const CACHE_NAME = 'wordgrid-v1'
+// Dynamic cache name based on timestamp for cache busting
+const CACHE_VERSION = new Date().getTime()
+const CACHE_NAME = `wordgrid-v${CACHE_VERSION}`
 const urlsToCache = [
   '/',
   '/manifest.json',
   '/Wordgrid.webp',
   // Add other static assets as needed
 ]
+
+// Network-first strategy for HTML pages to ensure fresh content
+const NETWORK_FIRST_URLS = ['/', '/api/']
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
@@ -36,48 +41,82 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network-first for critical pages, cache-first for assets
 self.addEventListener('fetch', (event) => {
   // Only handle same-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
     return
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
-          console.log('Service Worker: Serving from cache', event.request.url)
-          return response
-        }
+  const url = new URL(event.request.url)
+  const isNetworkFirst = NETWORK_FIRST_URLS.some(pattern => 
+    url.pathname.startsWith(pattern)
+  )
 
-        console.log('Service Worker: Fetching from network', event.request.url)
-        return fetch(event.request).then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+  if (isNetworkFirst || event.request.destination === 'document') {
+    // Network-first strategy for HTML pages and API calls
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        // Cache successful responses
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone()
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache)
+          })
+        }
+        return response
+      }).catch(() => {
+        // Fallback to cache if network fails
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            console.log('Service Worker: Serving from cache (offline)', event.request.url)
+            return cachedResponse
+          }
+          // Fallback to index page for navigation requests
+          if (event.request.destination === 'document') {
+            return caches.match('/')
+          }
+          throw new Error('No cached response available')
+        })
+      })
+    )
+  } else {
+    // Cache-first strategy for static assets
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          if (response) {
+            console.log('Service Worker: Serving from cache', event.request.url)
             return response
           }
 
-          // Clone the response
-          const responseToCache = response.clone()
+          console.log('Service Worker: Fetching from network', event.request.url)
+          return fetch(event.request).then((response) => {
+            // Don't cache non-successful responses
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response
+            }
 
-          // Cache the fetched resource
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache)
-            })
+            // Clone the response
+            const responseToCache = response.clone()
 
-          return response
+            // Cache the fetched resource
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache)
+              })
+
+            return response
+          })
         })
-      })
-      .catch(() => {
-        // Fallback for offline scenarios
-        if (event.request.destination === 'document') {
-          return caches.match('/')
-        }
-      })
-  )
+        .catch(() => {
+          // Fallback for offline scenarios
+          if (event.request.destination === 'document') {
+            return caches.match('/')
+          }
+        })
+    )
+  }
 })
 
 // Background sync for when connection is restored

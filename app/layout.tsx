@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/auth-provider"
 import { AuthSync } from "@/components/auth-sync"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
+import { AppVersionManagerComponent } from "@/components/app-version-manager"
 import { Toaster } from "react-hot-toast"
 import "./globals.css"
 
@@ -177,6 +178,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning={true}>
         <ServiceWorkerRegistration />
+        <AppVersionManagerComponent />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
