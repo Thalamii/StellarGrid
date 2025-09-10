@@ -1,6 +1,5 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import { AuthProvider } from "@/components/auth-provider"
 import { AuthSync } from "@/components/auth-sync"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -8,12 +7,6 @@ import { ServiceWorkerRegistration } from "@/components/service-worker-registrat
 import { AppVersionManagerComponent } from "@/components/app-version-manager"
 import { Toaster } from "react-hot-toast"
 import "./globals.css"
-
-const inter = Inter({ 
-  subsets: ["latin"],
-  display: 'swap', // Prevents invisible text during font load
-  preload: true // Enables font preloading
-})
 
 export const metadata: Metadata = {
   title: "WordGrid - Daily Square Word Search Game",
@@ -79,11 +72,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Performance optimization - DNS prefetch and preconnect */}
+        {/* Performance optimization - DNS prefetch for analytics only */}
         <link rel="dns-prefetch" href="//www.googletagmanager.com" />
         <link rel="dns-prefetch" href="//www.google-analytics.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/Wordgridsm.webp" type="image/webp" sizes="100x100" />
@@ -118,7 +109,54 @@ export default function RootLayout({
         <meta name="distribution" content="Global" />
         <meta name="rating" content="General" />
         
-        {/* WebApplication Schema */}
+      </head>
+      <body className="font-sans" suppressHydrationWarning={true}>
+        <ServiceWorkerRegistration />
+        <AppVersionManagerComponent />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <AuthSync />
+            <main className="min-h-screen bg-background">{children}</main>
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+                success: {
+                  duration: 2000,
+                },
+                error: {
+                  duration: 4000,
+                },
+              }}
+            />
+          </AuthProvider>
+        </ThemeProvider>
+        
+        {/* Google Analytics - Optimized for performance */}
+        <script defer src="https://www.googletagmanager.com/gtag/js?id=G-SJ67T9YMT6"></script>
+        <script
+          defer
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-SJ67T9YMT6');
+              gtag('config', 'AW-11474675914');
+            `,
+          }}
+        />
+        
+        {/* JSON-LD Schema - Moved to bottom for better performance */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -173,52 +211,6 @@ export default function RootLayout({
               playMode: "SinglePlayer",
               keywords: "Squardle, daily squardle, daily boggle, 4x4 boggle game, square words game, word squares, word grid game, boggle game, word connect"
             }),
-          }}
-        />
-      </head>
-      <body className={inter.className} suppressHydrationWarning={true}>
-        <ServiceWorkerRegistration />
-        <AppVersionManagerComponent />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <AuthSync />
-            <main className="min-h-screen bg-background">{children}</main>
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
-                },
-                success: {
-                  duration: 2000,
-                },
-                error: {
-                  duration: 4000,
-                },
-              }}
-            />
-          </AuthProvider>
-        </ThemeProvider>
-        
-        {/* Google Analytics - Optimized for performance */}
-        <script defer src="https://www.googletagmanager.com/gtag/js?id=G-SJ67T9YMT6"></script>
-        <script
-          defer
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-SJ67T9YMT6');
-              gtag('config', 'AW-11474675914');
-            `,
           }}
         />
       </body>
