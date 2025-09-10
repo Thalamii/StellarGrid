@@ -64,37 +64,51 @@ export class AppVersionManager {
   }
 
   /**
-   * Migrate localStorage data between versions
+   * Migrate localStorage data between versions (only when necessary)
    */
   private static migrateLocalStorageData(fromVersion: string) {
-    // Example migration logic - customize based on your needs
+    // Only perform migrations for specific version changes that need them
+    const needsMigration = this.shouldMigrate(fromVersion, this.CURRENT_VERSION);
     
-    // For now, let's clear game data but preserve stats on any version change
-    // This ensures users see the latest game logic while keeping their progress
+    if (!needsMigration) {
+      console.log(`ℹ️ No migration needed from ${fromVersion} to ${this.CURRENT_VERSION}`);
+      return;
+    }
+
+    console.log(`🔧 Migrating from version ${fromVersion} to ${this.CURRENT_VERSION}`);
     
+    // Only clear today's game data to avoid breaking ongoing games
     const today = new Date().toISOString().split('T')[0];
-    const gameKeys = [
-      `wordGridGame_${today}`,
-      // Add more game-specific keys that should be cleared
-    ];
+    const gameKey = `wordGridGame_${today}`;
+    
+    if (localStorage.getItem(gameKey)) {
+      console.log(`🗑️ Clearing today's game data for compatibility: ${gameKey}`);
+      localStorage.removeItem(gameKey);
+    }
 
-    gameKeys.forEach(key => {
-      const item = localStorage.getItem(key);
-      if (item) {
-        console.log(`🗑️ Clearing potentially incompatible game data: ${key}`);
-        localStorage.removeItem(key);
-      }
-    });
-
-    // Preserve important user data like stats
-    const preserveKeys = [
-      'wordgrid_daily_stats',
-      'wordgrid_sound_enabled',
-      'wordgrid_sound_volume',
-      'wordgrid_anonymous_session_id'
-    ];
-
-    console.log(`📊 Preserving user data: ${preserveKeys.join(', ')}`);
+    // Preserve all user data - stats, settings, etc.
+    console.log(`📊 All user stats and settings preserved`);
+  }
+  
+  /**
+   * Determine if migration is needed between versions
+   */
+  private static shouldMigrate(fromVersion: string, toVersion: string): boolean {
+    // Only migrate on major changes or specific breaking changes
+    // For example, only migrate if major version changes (0.1.x -> 0.2.x)
+    if (!fromVersion) return false; // First time user
+    
+    const fromParts = fromVersion.split('.');
+    const toParts = toVersion.split('.');
+    
+    // Major version change
+    if (fromParts[0] !== toParts[0]) return true;
+    
+    // Minor version change (might need migration)
+    if (fromParts[1] !== toParts[1]) return true;
+    
+    // Patch version change (usually no migration needed)
+    return false;
   }
 
   /**

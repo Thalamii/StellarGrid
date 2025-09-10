@@ -1,16 +1,19 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { HelpCircle, BarChart3 } from "lucide-react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useAuth } from "@/hooks/use-auth"
-import { AuthDialog } from "@/components/auth-dialog"
-import { GameInstructions } from "@/components/game-instructions"
-import { DailyStats } from "@/components/daily-stats"
-import { SettingsPopup } from "@/components/settings-popup"
 import { useState } from "react"
 import Image from "next/image"
+
+// Lazy load popup components (not needed for initial render)
+const AuthDialog = dynamic(() => import("@/components/auth-dialog").then(mod => ({ default: mod.AuthDialog })))
+const GameInstructions = dynamic(() => import("@/components/game-instructions").then(mod => ({ default: mod.GameInstructions })))
+const DailyStats = dynamic(() => import("@/components/daily-stats").then(mod => ({ default: mod.DailyStats })))
+const SettingsPopup = dynamic(() => import("@/components/settings-popup").then(mod => ({ default: mod.SettingsPopup })))
 
 export function GameHeader() {
   const { user, signOut } = useAuth()

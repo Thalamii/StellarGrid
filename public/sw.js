@@ -1,5 +1,6 @@
-// Dynamic cache name based on timestamp for cache busting
-const CACHE_VERSION = new Date().getTime()
+// Version-based cache name (only changes on actual updates)
+// Note: This should be updated manually when deploying or automated in your build process
+const CACHE_VERSION = '0.1.3'
 const CACHE_NAME = `wordgrid-v${CACHE_VERSION}`
 const urlsToCache = [
   '/',
@@ -8,8 +9,10 @@ const urlsToCache = [
   // Add other static assets as needed
 ]
 
-// Network-first strategy for HTML pages to ensure fresh content
-const NETWORK_FIRST_URLS = ['/', '/api/']
+// Strategy configuration
+const NETWORK_FIRST_URLS = ['/', '/api/']  // Always get fresh content
+const CACHE_FIRST_URLS = ['/Wordgrid.webp', '/favicon.ico', '/manifest.json'] // Static assets
+const STALE_WHILE_REVALIDATE_URLS = ['.js', '.css'] // JS/CSS with background updates
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
@@ -41,7 +44,7 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Fetch event - network-first for critical pages, cache-first for assets
+// Optimized fetch event with different strategies
 self.addEventListener('fetch', (event) => {
   // Only handle same-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
@@ -52,12 +55,17 @@ self.addEventListener('fetch', (event) => {
   const isNetworkFirst = NETWORK_FIRST_URLS.some(pattern => 
     url.pathname.startsWith(pattern)
   )
+  const isCacheFirst = CACHE_FIRST_URLS.some(pattern => 
+    url.pathname.includes(pattern)
+  )
+  const isStaleWhileRevalidate = STALE_WHILE_REVALIDATE_URLS.some(ext => 
+    url.pathname.includes(ext)
+  )
 
   if (isNetworkFirst || event.request.destination === 'document') {
     // Network-first strategy for HTML pages and API calls
     event.respondWith(
       fetch(event.request).then((response) => {
-        // Cache successful responses
         if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone()
           caches.open(CACHE_NAME).then((cache) => {
@@ -66,13 +74,11 @@ self.addEventListener('fetch', (event) => {
         }
         return response
       }).catch(() => {
-        // Fallback to cache if network fails
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             console.log('Service Worker: Serving from cache (offline)', event.request.url)
             return cachedResponse
           }
-          // Fallback to index page for navigation requests
           if (event.request.destination === 'document') {
             return caches.match('/')
           }
@@ -80,41 +86,58 @@ self.addEventListener('fetch', (event) => {
         })
       })
     )
-  } else {
-    // Cache-first strategy for static assets
+  } else if (isCacheFirst) {
+    // Cache-first strategy for static assets that rarely change
     event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          if (response) {
-            console.log('Service Worker: Serving from cache', event.request.url)
-            return response
-          }
-
-          console.log('Service Worker: Fetching from network', event.request.url)
-          return fetch(event.request).then((response) => {
-            // Don't cache non-successful responses
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response
-            }
-
-            // Clone the response
+      caches.match(event.request).then((response) => {
+        if (response) {
+          console.log('Service Worker: Serving from cache', event.request.url)
+          return response
+        }
+        return fetch(event.request).then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
             const responseToCache = response.clone()
-
-            // Cache the fetched resource
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache)
-              })
-
-            return response
-          })
-        })
-        .catch(() => {
-          // Fallback for offline scenarios
-          if (event.request.destination === 'document') {
-            return caches.match('/')
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache)
+            })
           }
+          return response
         })
+      })
+    )
+  } else if (isStaleWhileRevalidate) {
+    // Stale-while-revalidate strategy for JS/CSS (fast + fresh)
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        // Always try to fetch fresh version in background
+        const fetchPromise = fetch(event.request).then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone()
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache)
+            })
+          }
+          return response
+        })
+        
+        // Return cached version immediately if available, otherwise wait for network
+        return cachedResponse || fetchPromise
+      })
+    )
+  } else {
+    // Default: Network-first with cache fallback
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone()
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache)
+          })
+        }
+        return response
+      }).catch(() => {
+        return caches.match(event.request)
+      })
     )
   }
 })

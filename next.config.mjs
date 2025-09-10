@@ -1,3 +1,9 @@
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -9,22 +15,32 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Cache control headers to prevent aggressive caching
+  // Optimized cache control headers for performance + freshness balance
   async headers() {
     return [
       {
-        // Apply cache control to all routes
+        // HTML pages: Short cache with revalidation
         source: '/(.*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate',
+            value: 'public, max-age=300, stale-while-revalidate=86400',
           },
         ],
       },
       {
-        // Allow longer caching for static assets
-        source: '/(.*)\\.(js|css|png|jpg|jpeg|gif|ico|svg)',
+        // API routes: Very short cache for game data
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=60, stale-while-revalidate=300',
+          },
+        ],
+      },
+      {
+        // Static JS/CSS: Long cache but with version-based URLs
+        source: '/(.*)\\.(js|css)',
         headers: [
           {
             key: 'Cache-Control',
@@ -32,12 +48,24 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Images: Long cache (they don't change often)
+        source: '/(.*)\\.(png|jpg|jpeg|gif|ico|svg|webp)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, stale-while-revalidate=86400',
+          },
+        ],
+      },
     ];
   },
-  // Generate build ID based on timestamp for cache busting
+  // Use package version for build ID instead of timestamp  
   generateBuildId: async () => {
-    return `build-${Date.now()}`;
+    const { readFileSync } = await import('fs');
+    const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
+    return `v${packageJson.version}`;
   },
 }
 
-export default nextConfig
+export default bundleAnalyzer(nextConfig)

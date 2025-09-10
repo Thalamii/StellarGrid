@@ -9,7 +9,11 @@ import { AppVersionManagerComponent } from "@/components/app-version-manager"
 import { Toaster } from "react-hot-toast"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: 'swap', // Prevents invisible text during font load
+  preload: true // Enables font preloading
+})
 
 export const metadata: Metadata = {
   title: "WordGrid - Daily Square Word Search Game",
@@ -75,22 +79,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Google Analytics - Add at the beginning of head for early loading */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SJ67T9YMT6"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-SJ67T9YMT6');
-              gtag('config', 'AW-11474675914');
-            `,
-          }}
-        />
+        {/* Performance optimization - DNS prefetch and preconnect */}
+        <link rel="dns-prefetch" href="//www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="//www.google-analytics.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/Wordgrid.webp" type="image/webp" />
-        <link rel="apple-touch-icon" href="/Wordgrid.webp" />
+        <link rel="icon" href="/Wordgrid.webp" type="image/webp" sizes="192x192" />
+        <link rel="apple-touch-icon" href="/Wordgrid.webp" sizes="192x192" />
+        
+        {/* Preload critical logo image */}
+        <link rel="preload" href="/Wordgrid.webp" as="image" type="image/webp" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#8b5cf6" />
         
@@ -206,6 +206,21 @@ export default function RootLayout({
             />
           </AuthProvider>
         </ThemeProvider>
+        
+        {/* Google Analytics - Optimized for performance */}
+        <script defer src="https://www.googletagmanager.com/gtag/js?id=G-SJ67T9YMT6"></script>
+        <script
+          defer
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-SJ67T9YMT6');
+              gtag('config', 'AW-11474675914');
+            `,
+          }}
+        />
       </body>
     </html>
   )

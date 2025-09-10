@@ -14,6 +14,16 @@ fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
 
 console.log(`Version updated to ${packageJson.version}`);
 
+// Update service worker version to match
+const swPath = 'public/sw.js';
+let swContent = fs.readFileSync(swPath, 'utf8');
+swContent = swContent.replace(
+  /const CACHE_VERSION = '[^']*'/,
+  `const CACHE_VERSION = '${packageJson.version}'`
+);
+fs.writeFileSync(swPath, swContent);
+console.log(`Service worker version updated to ${packageJson.version}`);
+
 // Update environment variable for build
 process.env.npm_package_version = packageJson.version;
 

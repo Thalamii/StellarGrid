@@ -1,10 +1,13 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "lucide-react"
-import { PreviousDayPopup } from "./previous-day-popup"
+
+// Lazy load PreviousDayPopup (only loads when user clicks)
+const PreviousDayPopup = dynamic(() => import("./previous-day-popup").then(mod => ({ default: mod.PreviousDayPopup })))
 
 interface FoundWordsListProps {
   words: string[]

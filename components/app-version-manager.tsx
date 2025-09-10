@@ -12,17 +12,14 @@ export function AppVersionManagerComponent() {
       if (versionInfo.isNewVersion) {
         AppVersionManager.handleMigration(versionInfo.previousVersion)
         
-        // Optional: Show a toast notification to user
+        // Show update notification (no forced reload)
         console.log(
           `✨ WordGrid updated to version ${versionInfo.currentVersion}! ` +
-          `Some data was refreshed for the best experience.`
+          `Enhanced performance and features available.`
         )
         
-        // Force reload the page to ensure fresh JavaScript is loaded
-        // This happens only once when version changes
-        setTimeout(() => {
-          window.location.reload()
-        }, 1000)
+        // Let natural caching and service worker handle updates
+        // No forced reload - much better for user experience
       }
     } catch (error) {
       console.error('Error during version check:', error)
