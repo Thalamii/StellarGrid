@@ -37,10 +37,10 @@ export function GameHeader() {
           transition={{ delay: 0.2, duration: 0.4 }}
         >
           <Image
-            src="/Wordgrid.webp"
+            src="/Wordgridsm.webp"
             alt="WordGrid Logo"
-            width={64}
-            height={64}
+            width={40}
+            height={40}
             className="rounded-lg w-10 h-10 sm:w-12 sm:h-12 object-contain"
             priority
           />

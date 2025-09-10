@@ -1,17 +1,18 @@
 // Version-based cache name (only changes on actual updates)
 // Note: This should be updated manually when deploying or automated in your build process
-const CACHE_VERSION = '0.1.3'
+const CACHE_VERSION = '0.1.4'
 const CACHE_NAME = `wordgrid-v${CACHE_VERSION}`
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/Wordgrid.webp',
+  '/Wordgridsm.webp',
+  '/favicon.ico',
   // Add other static assets as needed
 ]
 
 // Strategy configuration
 const NETWORK_FIRST_URLS = ['/', '/api/']  // Always get fresh content
-const CACHE_FIRST_URLS = ['/Wordgrid.webp', '/favicon.ico', '/manifest.json'] // Static assets
+const CACHE_FIRST_URLS = ['/Wordgridsm.webp', '/favicon.ico', '/manifest.json'] // Static assets
 const STALE_WHILE_REVALIDATE_URLS = ['.js', '.css'] // JS/CSS with background updates
 
 // Install event - cache resources

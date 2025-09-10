@@ -4,7 +4,7 @@
   "description": "Find words by connecting adjacent letters in a 4x4 grid. New puzzle every day with unlimited rotations.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#dce2e7",
   "theme_color": "#8b5cf6",
   "orientation": "portrait-primary",
   "icons": [

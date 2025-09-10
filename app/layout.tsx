@@ -86,13 +86,13 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/Wordgrid.webp" type="image/webp" sizes="192x192" />
-        <link rel="apple-touch-icon" href="/Wordgrid.webp" sizes="192x192" />
+        <link rel="icon" href="/Wordgridsm.webp" type="image/webp" sizes="100x100" />
+        <link rel="apple-touch-icon" href="/icon-192.png" sizes="192x192" />
         
-        {/* Preload critical logo image */}
-        <link rel="preload" href="/Wordgrid.webp" as="image" type="image/webp" />
+        {/* Preload critical optimized logo image */}
+        <link rel="preload" href="/Wordgridsm.webp" as="image" type="image/webp" />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#8b5cf6" />
+        <meta name="theme-color" content="#dce2e7" />
         
         {/* Additional SEO Meta Tags */}
         <meta name="application-name" content="WordGrid" />
