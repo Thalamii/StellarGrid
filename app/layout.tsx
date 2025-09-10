@@ -92,7 +92,7 @@ export default function RootLayout({
         {/* Preload critical optimized logo image */}
         <link rel="preload" href="/Wordgridsm.webp" as="image" type="image/webp" />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#dce2e7" />
+        <meta name="theme-color" content="#8b5cf6" />
         
         {/* Additional SEO Meta Tags */}
         <meta name="application-name" content="WordGrid" />

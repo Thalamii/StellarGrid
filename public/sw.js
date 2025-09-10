@@ -1,6 +1,6 @@
 // Version-based cache name (only changes on actual updates)
 // Note: This should be updated manually when deploying or automated in your build process
-const CACHE_VERSION = '0.1.4'
+const CACHE_VERSION = '0.1.6'
 const CACHE_NAME = `wordgrid-v${CACHE_VERSION}`
 const urlsToCache = [
   '/',
