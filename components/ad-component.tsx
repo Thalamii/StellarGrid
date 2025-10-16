@@ -45,11 +45,21 @@ export function AdComponent({ className }: AdComponentProps) {
   }, [])
 
   return (
-    <div 
-      className={`flex justify-center items-center ${className || ''}`}
-      ref={adContainerRef}
-    >
-      {/* Ad will be inserted here by the script */}
+    <div className={className || ''}>
+      {/* Advertisement Label */}
+      <div className="text-center mb-2">
+        <span className="text-xs text-gray-500 uppercase tracking-wider">
+          Advertisement
+        </span>
+      </div>
+      
+      {/* Ad Container */}
+      <div 
+        className="flex justify-center items-center"
+        ref={adContainerRef}
+      >
+        {/* Ad will be inserted here by the script */}
+      </div>
     </div>
   )
 }
