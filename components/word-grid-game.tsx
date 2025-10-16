@@ -373,6 +373,7 @@ export function WordGridGame() {
         </div>
 
         <FoundWordsList words={gameState.foundWords} />
+        <AdComponent className="neomorphic-large p-4" />
       </div>
       
       <AnimatedScore
