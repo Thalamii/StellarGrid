@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useAuth } from "@/hooks/use-auth"
 import { useState } from "react"
 import Image from "next/image"
+import { MatchLobbyDialog } from "@/components/match-lobby-dialog"
 
 // Lazy load popup components (not needed for initial render)
 const AuthDialog = dynamic(() => import("@/components/auth-dialog").then(mod => ({ default: mod.AuthDialog })))
@@ -95,13 +96,14 @@ export function GameHeader() {
         
         {user ? (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Welcome, {user.email}</span>
+            <span className="text-sm text-muted-foreground hidden sm:inline">Welcome, {user.email}</span>
+            <MatchLobbyDialog />
             <Button variant="outline" size="sm" onClick={() => signOut()}>
               Sign Out
             </Button>
           </div>
         ) : (
-          <div /> 
+          <div />
         )}
       </div>
 

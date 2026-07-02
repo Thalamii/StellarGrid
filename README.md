@@ -1,30 +1,30 @@
-# wordgridmain
+# Stellargrid
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A Boggle-style word-finding game built with Next.js, Supabase, and Zustand — including a staked 1v1 "winner takes all" multiplayer mode with Soroban escrow on Stellar.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/cybergeeks-projects/v0-wordgridmain)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/DVRxaxUR07I)
+## Features
 
-## Overview
+- **Daily puzzle**: a deterministic, date-seeded 4x4 letter grid shared by all players each day.
+- **Staked 1v1 matches**: two players stake equal USDC via a [Trustless Work](https://github.com/Trustless-Work/Trustless-Work-Smart-Escrow) Soroban escrow, play the same randomly-seeded board simultaneously, and the winner takes the full pot.
+- **Live scoreboard**: opponent score updates via Supabase Realtime while a staked match is in progress.
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Tech stack
 
-## Deployment
+- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS, Radix UI, Framer Motion, Zustand.
+- **Backend**: Supabase (Postgres, Auth, Realtime) via Next.js Server Actions and API routes.
+- **Stellar/Soroban**: staked matches integrate [Trustless Work](https://github.com/Trustless-Work/Trustless-Work-Smart-Escrow) for escrow. This is currently mocked (`lib/soroban/mockEscrowClient.ts`) so the match lifecycle can be developed and tested with no Stellar dependency — see [CONTRIBUTING.md](./CONTRIBUTING.md) for the real-integration contributor issue.
 
-Your project is live at:
+## Local development
 
-**[https://vercel.com/cybergeeks-projects/v0-wordgridmain](https://vercel.com/cybergeeks-projects/v0-wordgridmain)**
+1. Copy `.env.example` to `.env.local` and fill in your Supabase project's URL, anon key, and (for staked matches) service role key.
+2. Run the SQL in `database-setup.sql`, `supabase-word-attempts-table.sql`, and `supabase-staked-matches-table.sql` in your Supabase SQL editor, in that order.
+3. Install dependencies and start the dev server:
 
-## Build your app
+   ```bash
+   pnpm install
+   pnpm dev
+   ```
 
-Continue building your app on:
+4. `NEXT_PUBLIC_ESCROW_MODE=mock` (the default) lets you exercise the full staked-match flow — create, join, stake, play, settle — without any real Stellar transactions.
 
-**[https://v0.dev/chat/projects/DVRxaxUR07I](https://v0.dev/chat/projects/DVRxaxUR07I)**
-
-## How It Works
-
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines, and the repository's GitHub issues for the current contributor backlog (real Trustless Work SDK integration, wallet connect, on-chain leaderboard contract, and more).
