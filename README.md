@@ -1,5 +1,8 @@
 # Stellargrid
 
+[![CI](https://github.com/Thalamii/StellarGrid/actions/workflows/ci.yml/badge.svg)](https://github.com/Thalamii/StellarGrid/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 A Boggle-style word-finding game built with Next.js, Supabase, and Zustand — including a staked 1v1 "winner takes all" multiplayer mode with Soroban escrow on Stellar.
 
 ## Features
@@ -27,4 +30,4 @@ A Boggle-style word-finding game built with Next.js, Supabase, and Zustand — i
 
 4. `NEXT_PUBLIC_ESCROW_MODE=mock` (the default) lets you exercise the full staked-match flow — create, join, stake, play, settle — without any real Stellar transactions.
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines, and the repository's GitHub issues for the current contributor backlog (real Trustless Work SDK integration, wallet connect, on-chain leaderboard contract, and more).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines, and the repository's GitHub issues for the current contributor backlog (real Trustless Work SDK integration, wallet connect, on-chain leaderboard contract, and more). See also [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) and [SECURITY.md](./SECURITY.md).
