@@ -25,5 +25,9 @@ export const supabase = new Proxy({} as SupabaseClient, {
   },
 })
 
+export function isSupabaseConfigured(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) && Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+}
+
 // Note: Currently using localStorage for stats instead of database
 // Supabase client is kept for potential future features

@@ -4,7 +4,7 @@ import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
-import { supabase } from "@/lib/supabase"
+import { supabase, isSupabaseConfigured } from "@/lib/supabase"
 
 interface AuthContextType {
   user: User | null
@@ -29,6 +29,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Supabase isn't configured yet (e.g. this environment hasn't been given
+    // Supabase credentials) — treat everyone as logged out rather than
+    // crashing the app. Only staked multiplayer needs auth; the daily game
+    // works entirely off localStorage regardless.
+    if (!isSupabaseConfigured()) {
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -47,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured()) throw new Error("Sign-in is not available yet.")
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -55,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string) => {
+    if (!isSupabaseConfigured()) throw new Error("Sign-up is not available yet.")
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -63,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!isSupabaseConfigured()) return
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
