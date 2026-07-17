@@ -16,7 +16,7 @@ export function AdComponent({ className }: AdComponentProps) {
 
     try {
       // Set up the ad options
-      ;(window as any).atOptions = {
+      ;(window as unknown as { atOptions: Record<string, unknown> }).atOptions = {
         'key': 'a063a148873a7165bbb1e88930449b1b',
         'format': 'iframe',
         'height': 250,

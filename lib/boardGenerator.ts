@@ -49,15 +49,19 @@ class TrieNode {
   }
 
   addWord(word: string) {
-    let current: TrieNode = this
-    for (const char of word.toUpperCase()) {
-      if (!current.children.has(char)) {
-        current.children.set(char, new TrieNode())
-      }
-      current = current.children.get(char)!
-    }
-    current.isEndOfWord = true
+    insertIntoTrie(this, word.toUpperCase())
   }
+}
+
+function insertIntoTrie(root: TrieNode, word: string) {
+  let current = root
+  for (const char of word) {
+    if (!current.children.has(char)) {
+      current.children.set(char, new TrieNode())
+    }
+    current = current.children.get(char)!
+  }
+  current.isEndOfWord = true
 }
 
 class BoardSolver {

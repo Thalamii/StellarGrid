@@ -28,7 +28,7 @@ export function InstallPrompt({ wordsFound }: InstallPromptProps) {
     // Check if app is already installed
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-      const isIOSStandalone = (window.navigator as any).standalone === true
+      const isIOSStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone === true
       setIsInstalled(isStandalone || isIOSStandalone)
     }
 

@@ -69,7 +69,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Oops! Something went wrong
               </h1>
               <p className="text-gray-600 mb-6">
-                Don't worry, your game progress is safe. Let's get you back to playing!
+                Don&apos;t worry, your game progress is safe. Let&apos;s get you back to playing!
               </p>
               
               <div className="space-y-3">

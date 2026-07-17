@@ -32,7 +32,7 @@ export function MatchResults({
       {didWin === null ? (
         <>
           <Handshake className="w-12 h-12 mx-auto text-blue-600" />
-          <h2 className="text-2xl font-bold">It's a tie!</h2>
+          <h2 className="text-2xl font-bold">It&apos;s a tie!</h2>
           <p className="text-muted-foreground">Both stakes have been refunded.</p>
         </>
       ) : didWin ? (
