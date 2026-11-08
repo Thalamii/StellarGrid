@@ -127,17 +127,17 @@ Relevant files: `lib/match-actions.ts` (`submitScore`), `lib/boardGenerator.ts`,
 
 `good first issue`
 
-`lib/match-actions.ts` already has `reconcileMatch(matchId)` and a corresponding `GET /api/matches/[id]/reconcile` route that sweep a *single* match for stuck states, but nothing calls this on a schedule.
+`lib/match-actions.ts` already has `reconcileMatch(matchId)` and a corresponding `GET /api/matches/[id]/reconcile` route that sweep a *single* match for stuck states.
 
-**What to build:**
-- A scheduled sweep (Vercel Cron fits, given this is Vercel-deployed) querying all `active` matches with `ends_at` in the past and all `awaiting_stakes` matches with `stake_deadline_at` in the past, calling `reconcileMatch` (or a new bulk variant) for each.
-- Consider a new `app/api/matches/reconcile-all/route.ts` (no `[id]`) for the cron to hit, separate from the existing per-match route.
-- Document the cron schedule choice.
+**Implementation:**
+- Bulk variant `reconcileAllMatches()` in `lib/match-actions.ts` sweeps all `active` matches past `ends_at` and `awaiting_stakes` matches past `stake_deadline_at`.
+- Dedicated endpoint `GET /api/matches/reconcile-all` in `app/api/matches/reconcile-all/route.ts` triggers the sweep with optional `CRON_SECRET` authorization.
+- Configured in `vercel.json` with a 5-minute schedule (`*/5 * * * *`), balancing timely settlement against serverless invocation overhead.
 
 **Acceptance criteria:**
-- [ ] A scheduled job sweeps all stuck matches, not just one at a time
-- [ ] Timed-out active matches settle automatically even if both clients disconnect
-- [ ] Matches stuck in `awaiting_stakes` past deadline refund automatically
-- [ ] Existing per-match route is untouched
+- [x] A scheduled job sweeps all stuck matches, not just one at a time
+- [x] Timed-out active matches settle automatically even if both clients disconnect
+- [x] Matches stuck in `awaiting_stakes` past deadline refund automatically
+- [x] Existing per-match route is untouched
 
-Relevant files: `lib/match-actions.ts` (`reconcileMatch`, `settleMatch`), `app/api/matches/[id]/reconcile/route.ts`.
+Relevant files: `lib/match-actions.ts`, `app/api/matches/reconcile-all/route.ts`, `vercel.json`.
