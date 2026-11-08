@@ -383,3 +383,57 @@ export async function listOpenMatches() {
     return { success: false, error: "Failed to list open matches" }
   }
 }
+
+/**
+ * Sweeps all in-flight matches for stuck states:
+ * 1. Active matches whose timer has expired (ends_at < now)
+ * 2. Matches stuck in awaiting_stakes past their stake deadline (stake_deadline_at < now)
+ * Calls reconcileMatch for each stuck match found.
+ */
+export async function reconcileAllMatches() {
+  try {
+    const now = new Date().toISOString()
+
+    // Query active matches whose duration expired
+    const { data: expiredActive, error: activeError } = await supabaseAdmin
+      .from("matches")
+      .select("id")
+      .eq("status", "active")
+      .lt("ends_at", now)
+
+    // Query awaiting_stakes matches past their stake deadline
+    const { data: expiredStakes, error: stakesError } = await supabaseAdmin
+      .from("matches")
+      .select("id")
+      .eq("status", "awaiting_stakes")
+      .lt("stake_deadline_at", now)
+
+    if (activeError) {
+      console.error("Error fetching expired active matches:", activeError)
+    }
+    if (stakesError) {
+      console.error("Error fetching expired awaiting_stakes matches:", stakesError)
+    }
+
+    const matchIds = new Set<string>()
+    expiredActive?.forEach((m) => matchIds.add(m.id))
+    expiredStakes?.forEach((m) => matchIds.add(m.id))
+
+    const results: Array<{ id: string; success: boolean; data?: unknown; error?: string }> = []
+    for (const matchId of matchIds) {
+      const res = await reconcileMatch(matchId)
+      results.push({ id: matchId, ...res })
+    }
+
+    return {
+      success: true,
+      data: {
+        totalSwept: matchIds.size,
+        results,
+      },
+    }
+  } catch (error) {
+    console.error("Error in reconcileAllMatches:", error)
+    return { success: false, error: "Failed to reconcile all stuck matches" }
+  }
+}
